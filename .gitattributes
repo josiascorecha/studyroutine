@@ -1,0 +1,8 @@
+# Finais de linha LF no repositório (os scripts rodam na VPS Linux).
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.jpg binary
+*.jar binary
+*.woff binary
+*.woff2 binary

@@ -1,0 +1,104 @@
+{
+  "versao": "2026-10-04",
+  "itens": [
+    {
+      "id": "ideias-estudo-pessoal-familia-2024",
+      "titulo": "Ideias para estudo pessoal e adoração em família",
+      "descricao": "Dica de estudo de A Sentinela (Estudo), janeiro de 2024: seis formatos para variar o estudo e a adoração em família.",
+      "url": "https://wol.jw.org/pt/wol/d/r5/lp-t/2024247",
+      "temas": ["estudo-pessoal", "adoracao-em-familia"],
+      "publico": "todos",
+      "tipo": "guia"
+    },
+    {
+      "id": "tire-tempo-texto-diario",
+      "titulo": "Tire tempo para o texto diário",
+      "descricao": "Artigo de estudo de A Sentinela (Estudo), outubro de 2026, sobre criar o hábito do texto diário.",
+      "url": "https://wol.jw.org/pt/wol/d/r5/lp-t/2026605",
+      "temas": ["texto-diario", "estudo-pessoal"],
+      "publico": "todos",
+      "tipo": "artigo"
+    },
+    {
+      "id": "o-que-e-adoracao-em-familia",
+      "titulo": "O que é adoração em família?",
+      "descricao": "Explica o propósito da noite de adoração em família.",
+      "url": "https://wol.jw.org/pt/wol/d/r5/lp-t/1102012151",
+      "temas": ["adoracao-em-familia"],
+      "publico": "familia",
+      "tipo": "artigo"
+    },
+    {
+      "id": "ideias-adoracao-familia-2011",
+      "titulo": "Ideias para adoração em família e estudo pessoal",
+      "descricao": "Sugestões práticas publicadas em A Sentinela de 2011.",
+      "url": "https://wol.jw.org/pt/wol/d/r5/lp-t/2011603",
+      "temas": ["adoracao-em-familia", "estudo-pessoal"],
+      "publico": "familia",
+      "tipo": "guia"
+    },
+    {
+      "id": "use-o-site-para-ensinar-filhos",
+      "titulo": "Use nosso site para ensinar seus filhos",
+      "descricao": "Como aproveitar o jw.org com crianças na adoração em família.",
+      "url": "https://wol.jw.org/pt/wol/d/r5/lp-t/202013364",
+      "temas": ["adoracao-em-familia", "criancas"],
+      "publico": "criancas",
+      "tipo": "guia"
+    },
+    {
+      "id": "torne-se-amigo-de-jeova-ministerio",
+      "titulo": "Use o jw.org no ministério — Torne-se Amigo de Jeová",
+      "descricao": "A série de vídeos para crianças e como usá-la.",
+      "url": "https://wol.jw.org/pt/wol/d/r5/lp-t/202015008",
+      "temas": ["criancas", "ministerio"],
+      "publico": "criancas",
+      "tipo": "video"
+    },
+    {
+      "id": "brochura-ame-as-pessoas",
+      "titulo": "Ame as Pessoas — Faça Discípulos",
+      "descricao": "Brochura usada nas partes de ministério da reunião de meio de semana.",
+      "url": "https://wol.jw.org/pt/wol/publication/r5/lp-t/lmd",
+      "temas": ["ministerio", "reunioes"],
+      "publico": "todos",
+      "tipo": "publicacao"
+    },
+    {
+      "id": "livro-seja-feliz-para-sempre",
+      "titulo": "Seja Feliz para Sempre! — Um Curso da Bíblia para Você",
+      "descricao": "Livro usado nos estudos bíblicos (60 lições em 4 partes).",
+      "url": "https://wol.jw.org/pt/wol/publication/r5/lp-t/lff",
+      "temas": ["estudos-biblicos", "ministerio"],
+      "publico": "todos",
+      "tipo": "publicacao"
+    },
+    {
+      "id": "recursos-seja-feliz-para-sempre",
+      "titulo": "Recursos úteis do livro Seja Feliz para Sempre!",
+      "descricao": "Como aproveitar os recursos de cada lição nos estudos.",
+      "url": "https://wol.jw.org/pt/wol/d/r5/lp-t/202022340",
+      "temas": ["estudos-biblicos"],
+      "publico": "todos",
+      "tipo": "guia"
+    },
+    {
+      "id": "melhore-leitura-ensino",
+      "titulo": "Melhore Sua Leitura e Seu Ensino",
+      "descricao": "Brochura com as lições de oratória usadas nas designações.",
+      "url": "https://wol.jw.org/pt/wol/publication/r5/lp-t/th",
+      "temas": ["reunioes", "designacoes"],
+      "publico": "todos",
+      "tipo": "publicacao"
+    },
+    {
+      "id": "alexa-skill-jworg",
+      "titulo": "Como usar a skill jw.org para a Amazon Alexa",
+      "descricao": "Lista oficial de comandos de voz, útil para quem tem dificuldade para ler.",
+      "url": "https://www.jw.org/pt/ajuda-online/como-usar-jw-org/skills-para-amazon-alexa/",
+      "temas": ["acessibilidade", "texto-diario"],
+      "publico": "todos",
+      "tipo": "guia"
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+# Caddy no host: acrescente ao Caddyfile existente e rode `caddy reload`.
+# O Caddy emite o certificado HTTPS automaticamente. Sem a diretiva `log`, ele não grava
+# log de acesso deste site (coerente com a política de privacidade do app).
+studyroutine.j2bot.com.br {
+    encode gzip
+    request_body {
+        max_size 8MB
+    }
+    reverse_proxy 127.0.0.1:8088
+}

@@ -1,0 +1,18 @@
+# Só se a VPS usa Traefik em container (a inspeção mostra labels traefik.*).
+# Uso:  docker compose --env-file .env -f docker-compose.yml -f proxy/docker-compose.traefik.yml up -d
+# Ajuste TRAEFIK_NETWORK e o nome do certresolver para os que o seu Traefik já usa.
+services:
+  app:
+    networks: [internal, traefik]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${TRAEFIK_NETWORK:-traefik}
+      traefik.http.routers.studyroutine.rule: Host(`studyroutine.j2bot.com.br`)
+      traefik.http.routers.studyroutine.entrypoints: websecure
+      traefik.http.routers.studyroutine.tls.certresolver: ${TRAEFIK_CERTRESOLVER:-letsencrypt}
+      traefik.http.services.studyroutine.loadbalancer.server.port: "3000"
+
+networks:
+  traefik:
+    external: true
+    name: ${TRAEFIK_NETWORK:-traefik}
