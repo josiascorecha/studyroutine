@@ -25,28 +25,31 @@ Confira: porta 8088 livre, nomes `studyroutine-*` livres, qual proxy reverso est
 
 Registro `A` (e `AAAA`, se houver IPv6) de `studyroutine.j2bot.com.br` para o IP da VPS.
 
-## 3. Código e configuração
+## 3 e 4. Código, configuração e subida
+
+Forma rápida (primeira vez), que gera o `.env` com segredos aleatórios e já roda o deploy:
 
 ```bash
-cd /opt                      # ou a pasta onde ficam os projetos
-git clone <repositório> studyroutine
-cd studyroutine/deploy
+sudo git clone https://github.com/josiascorecha/studyroutine.git /opt/studyroutine
+cd /opt/studyroutine/deploy
+sudo bash scripts/primeira-instalacao.sh studyroutine.j2bot.com.br contato@seudominio.com.br
+```
+
+O script confere Docker, porta livre e nomes livres antes de criar qualquer coisa, e não faz nada se o `.env` já existir.
+
+Forma manual:
+
+```bash
+cd /opt/studyroutine/deploy
 cp .env.example .env
 openssl rand -hex 32         # use para POSTGRES_PASSWORD
 openssl rand -hex 32         # use para IP_PEPPER
 nano .env                    # APP_ORIGIN=https://studyroutine.j2bot.com.br, CONTACT_EMAIL, segredos
 chmod 600 .env
-```
-
-O `deploy.sh` recusa subir enquanto houver valores de exemplo no `.env`.
-
-## 4. Subida
-
-```bash
 bash scripts/deploy.sh
 ```
 
-O script guarda a imagem atual para rollback, faz backup antes de atualizar (a partir do segundo deploy), constrói a imagem, sobe os serviços e verifica `http://127.0.0.1:8088/api/health`. Se a saúde falhar, volta para a imagem anterior.
+O `deploy.sh` recusa subir enquanto houver valores de exemplo no `.env`. Ele guarda a imagem atual para rollback, faz backup antes de atualizar (a partir do segundo deploy), constrói a imagem, sobe os serviços e verifica `http://127.0.0.1:8088/api/health`. Se a saúde falhar, volta para a imagem anterior.
 
 ## 5. Proxy reverso e HTTPS
 
