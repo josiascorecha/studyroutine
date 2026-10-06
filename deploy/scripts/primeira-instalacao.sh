@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Primeira instalação na VPS: cria deploy/.env com segredos aleatórios e sobe o StudyRoutine.
 # Uso (na pasta deploy/):
-#   bash scripts/primeira-instalacao.sh studyroutine.j2bot.com.br contato@seudominio.com.br [porta]
+#   bash scripts/primeira-instalacao.sh studyroutine.j2bot.com.br contato@exemplo.com.br [porta]
 # Não mexe em nada fora do projeto "studyroutine". Se o .env já existir, não faz nada.
 set -euo pipefail
 cd "$(dirname "$0")/.."

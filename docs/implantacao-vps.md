@@ -32,7 +32,7 @@ Forma rápida (primeira vez), que gera o `.env` com segredos aleatórios e já r
 ```bash
 sudo git clone https://github.com/josiascorecha/studyroutine.git /opt/studyroutine
 cd /opt/studyroutine/deploy
-sudo bash scripts/primeira-instalacao.sh studyroutine.j2bot.com.br contato@seudominio.com.br
+sudo bash scripts/primeira-instalacao.sh studyroutine.j2bot.com.br contato@exemplo.com.br
 ```
 
 O script confere Docker, porta livre e nomes livres antes de criar qualquer coisa, e não faz nada se o `.env` já existir.
