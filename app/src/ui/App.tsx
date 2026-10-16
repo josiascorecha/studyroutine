@@ -89,6 +89,9 @@ function MainApp() {
     if (w) void svc.audio.ensureChapters(w.book, w.from, w.to);
   }, [svc.audio, w?.book, w?.from, w?.to]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
+    void svc.audio.ensureProgram(view.win.meeting.week);
+  }, [svc.audio, view.win.meeting.week]);
+  useEffect(() => {
     void svc.audio.ensureArticle(view.weekend.week);
   }, [svc.audio, view.weekend.week]);
   useEffect(() => {

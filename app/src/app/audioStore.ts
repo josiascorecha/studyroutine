@@ -1,4 +1,5 @@
-import { audioApi, fetchJson, parseChapterAudio, parseStudyIssue, type StudyArticleAudio } from '../audio/official';
+import { audioApi, fetchJson, parseChapterAudio, parseStudyIssue, parseWorkbookIssue, type StudyArticleAudio } from '../audio/official';
+import { workbookIssues, type WorkbookWeek } from '../domain/workbook';
 import type { DayKey } from '../domain/dates';
 import type { ChapterAudio } from '../domain/reading';
 import { candidateIssues } from '../domain/watchtower';
@@ -13,6 +14,7 @@ type Listener = () => void;
 export class AudioStore {
   private chapters = new Map<string, ChapterAudio | null>();
   private articles = new Map<DayKey, StudyArticleAudio | null>();
+  private programs = new Map<DayKey, WorkbookWeek>();
   private inflight = new Map<string, Promise<void>>();
   private listeners = new Set<Listener>();
   version = 0;
@@ -38,6 +40,42 @@ export class AudioStore {
 
   article(week: DayKey): StudyArticleAudio | undefined {
     return this.articles.get(week) ?? undefined;
+  }
+
+  /** Trecho da leitura da semana segundo a apostila oficial, se já consultado. */
+  program(week: DayKey): WorkbookWeek | undefined {
+    return this.programs.get(week);
+  }
+
+  async ensureProgram(week: DayKey): Promise<void> {
+    if (this.programs.has(week)) return;
+    await this.once(`p:${week}`, async () => {
+      const cached = await this.repo.getCache<WorkbookWeek>(`mwb:week:${week}`);
+      if (cached) {
+        this.programs.set(week, cached);
+        this.notify();
+        return;
+      }
+      for (const issue of workbookIssues(week)) {
+        let list = await this.repo.getCache<WorkbookWeek[]>(`mwb:issue:${issue}`);
+        if (!list) {
+          try {
+            list = parseWorkbookIssue(await fetchJson(audioApi.workbookUrl(issue), this.fetchImpl), issue);
+            // Edição ainda não publicada volta vazia: não guarda, para tentar de novo depois.
+            if (list.length) await this.repo.setCache(`mwb:issue:${issue}`, list);
+          } catch {
+            continue;
+          }
+        }
+        for (const w of list) if (!this.programs.has(w.start)) this.programs.set(w.start, w);
+        const found = list.find((w) => w.start === week);
+        if (found) {
+          await this.repo.setCache(`mwb:week:${week}`, found);
+          this.notify();
+          return;
+        }
+      }
+    });
   }
 
   private once(key: string, fn: () => Promise<void>): Promise<void> {

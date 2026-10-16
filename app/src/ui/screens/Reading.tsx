@@ -43,7 +43,10 @@ export function Reading({ view, nav }: { view: DayView; nav: Nav }) {
       {plan && week ? (
         <>
           <section className="card">
-            <div className="card-title">{portionLabel(week.book, plan.units, 0, plan.total)}</div>
+            <div className="card-head">
+              <div className="card-title">{portionLabel(week.book, plan.units, 0, plan.total)}</div>
+              {week.official && <span className="pill">Apostila oficial</span>}
+            </div>
             <div className="muted">
               {plan.total} versículos{plan.totalSeconds != null ? ` · ${fmtAudio(plan.totalSeconds)} de áudio oficial` : ''}
             </div>
@@ -54,7 +57,7 @@ export function Reading({ view, nav }: { view: DayView; nav: Nav }) {
             {s.alexa && <div className="cmd">“{alexa.weekReading(view.alexaPhrase)}”</div>}
             <div className="row-btns">
               <button type="button" className="btn ghost" onClick={() => nav.sheet({ type: 'week' })}>
-                Alterar trecho
+                {week.official ? 'Ajustar ou marcar lições' : 'Alterar trecho'}
               </button>
               <ExternalLink href={links.meetings(win.meeting.date)} className="btn ghost">
                 Ver programação

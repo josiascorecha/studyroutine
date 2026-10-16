@@ -37,10 +37,25 @@ function silentWav(): Buffer {
 }
 
 /** Simula o serviço de metadados e os MP3 oficiais (formato real, conteúdo de teste). */
-async function mockOfficial(page: Page) {
+async function mockOfficial(page: Page, opts: { workbook?: boolean } = {}) {
   await page.route('https://b.jw-cdn.org/**', (route) => {
     const u = new URL(route.request().url());
     const pub = u.searchParams.get('pub');
+    if (pub === 'mwb' && opts.workbook && u.searchParams.get('issue') === '202609') {
+      return route.fulfill({
+        json: {
+          files: {
+            T: {
+              RTF: [
+                { title: '<strong>Baixar todos os arquivos (ZIP)</strong>' },
+                { title: '28 de setembro a 4 de outubro (Jeremias 38 a 39)' },
+                { title: '5 a 11 de outubro (Jeremias 40 a 41)' },
+              ],
+            },
+          },
+        },
+      });
+    }
     if (pub === 'nwt') {
       const c = Number(u.searchParams.get('track'));
       const r = MARKERS[c];
@@ -80,8 +95,8 @@ async function mockOfficial(page: Page) {
   await page.route('https://cfp2.jw-cdn.org/**', (route) => route.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }));
 }
 
-async function onboard(page: Page, day = SEXTA) {
-  await mockOfficial(page);
+async function onboard(page: Page, day = SEXTA, opts: { workbook?: boolean } = {}) {
+  await mockOfficial(page, opts);
   await page.goto(`/?hoje=${day}`);
   await page.getByRole('button', { name: 'Começar' }).click();
   await expect(page.getByText('quinta, 1/10 e terça, 6/10')).toBeVisible();
@@ -235,4 +250,42 @@ test('sincronização cifrada entre dois aparelhos e exclusão do cofre', async 
   await a.close();
   await b.close();
   await c.close();
+});
+
+test('leitura vem da apostila oficial; joias, designação com data e Alexa', async ({ page, context }) => {
+  await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+  await onboard(page, SEXTA, { workbook: true });
+
+  // Sem cadastrar nada: o trecho da semana vem dos títulos oficiais da apostila.
+  const leitura = page.getByRole('region', { name: 'Leitura da Bíblia' });
+  await expect(leitura.getByText('Jeremias 40:1–7')).toBeVisible();
+  await page.getByRole('button', { name: 'Leitura', exact: true }).click();
+  await expect(page.getByText('Apostila oficial')).toBeVisible();
+
+  // Joias: links de pesquisa para cada capítulo da semana.
+  await page.getByRole('button', { name: 'Reuniões', exact: true }).click();
+  await page.getByRole('button', { name: 'Meio de semana' }).click();
+  const pesquisa = page.getByLabel('Pesquisa da leitura da semana');
+  await expect(pesquisa.getByRole('link', { name: 'Jeremias 41 com notas' })).toHaveAttribute('href', 'https://wol.jw.org/pt/wol/b/r5/lp-t/nwtsty/24/41');
+  await expect(pesquisa.getByRole('link', { name: 'Matérias sobre Jeremias 40' })).toHaveAttribute('href', /wol\/s\/r5\/lp-t\?q=Jeremias%2040/);
+
+  // Designação: escolhe a data entre as próximas reuniões.
+  const des = page.getByRole('region', { name: 'Designações' });
+  await des.getByLabel('Reunião').selectOption('fim:2026-10-11');
+  await des.getByLabel('Tipo').selectOption('Leitor de A Sentinela');
+  await des.getByRole('button', { name: 'Adicionar designação' }).click();
+  await expect(des.locator('.row-title', { hasText: 'Leitor de A Sentinela' })).toBeVisible();
+  await expect(des.getByText(/Fim de semana · Domingo, 11\/10/)).toBeVisible();
+  await des.getByLabel('Reunião').selectOption('meio:2026-10-07');
+  await des.getByLabel('Tipo').selectOption('Leitura da Bíblia');
+  await des.getByRole('button', { name: 'Adicionar designação' }).click();
+  await page.getByRole('button', { name: 'Hoje', exact: true }).click();
+  const prox = page.getByRole('region', { name: 'Designação próxima' });
+  await expect(prox.locator('.card-title')).toHaveText('Leitura da Bíblia');
+
+  // Alexa: copiar o comando.
+  await page.getByRole('region', { name: 'Texto diário' }).getByRole('button', { name: 'Alexa' }).click();
+  await page.getByRole('button', { name: /Copiar o comando: Alexa, ler o texto diário/ }).click();
+  await expect(page.getByText('Copiado', { exact: true })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('Alexa, ler o texto diário de hoje do jw.org');
 });

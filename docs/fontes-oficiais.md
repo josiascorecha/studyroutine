@@ -47,6 +47,21 @@ https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=w&issue=202
 - Capítulo: `files.T.MP3[0]` traz `file.url` (em `*.jw-cdn.org`), `duration` e `markers.markers[]` com `verseNumber` e `startTime` (`hh:mm:ss.mmm`). Alguns capítulos não têm marcador para todos os versículos (ex.: Jeremias 39:12); o app interpola.
 - A Sentinela: cada artigo de estudo traz no título a semana entre parênteses, ex.: "Ajude outros a conhecer a Jeová (28 de setembro—4 de outubro)". O app associa semana → artigo por esse título, sem abrir páginas. Procura nas edições de 1 a 3 meses antes da semana.
 - O app só aceita URLs de áudio `https://*.jw-cdn.org`. Em caso de falha, oferece Abrir e o comando da Alexa.
+- Leitura da semana: a apostila Vida e Ministério (`pub=mwb`, edições bimestrais de mês ímpar, `fileformat=RTF`) lista um arquivo por semana com o título "5 a 11 de outubro (Jeremias 40 a 41)". O app lê só esses títulos (semana + livro + capítulos), sem baixar o arquivo nem abrir páginas. Sem resposta, a pessoa cadastra o trecho à mão; o que ela cadastrar tem prioridade.
+
+```
+https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=mwb&issue=202609&fileformat=RTF&alllangs=0&langwritten=T&txtCMSLang=T
+```
+
+## Parágrafo no JW Library
+
+`https://www.jw.org/finder?wtlocale=T&docid=DOCID&par=N` abre o artigo no parágrafo N (conferido em 15/10/2026: redireciona para `…#pN`). No Android, o sistema oferece o JW Library quando ele está instalado. O app copia o comentário preparado e abre o parágrafo; a pessoa cola na nota.
+
+Não é possível gerar `.jwpub` (formato de publicação da organização, cifrado) nem importar notas com segurança: o backup `.jwlibrary` é um formato não documentado e restaurá-lo no JW Library substitui os dados da pessoa.
+
+## App Alexa
+
+Não há meio oficial de outro app abrir uma skill ou mandar um comando para a Alexa. Os Quick Links da Amazon só podem ser criados pelo dono da skill e abrem uma página web de login, não o app. O StudyRoutine copia o comando e abre o app Alexa (`com.amazon.dee.app`), onde a pessoa cola em "Digitar" ou fala; sem o app, abre a página dele na Google Play.
 
 ## Alexa (skill oficial do JW.ORG)
 

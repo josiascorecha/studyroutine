@@ -38,12 +38,12 @@ Cada registro tem `type`, `key`, `data`, `hlc` (relógio lógico), `deleted` (l�
 | Tipo | Chave | Conteúdo |
 |---|---|---|
 | `config` | `main` | Ajustes: reuniões, prazo da leitura, modo de ministério, meta, tema, Alexa, lembretes, dia da adoração em família, temas de interesse |
-| `semana` | segunda-feira da semana da reunião | Livro, capítulos e lições do "Ame as Pessoas" treinadas |
+| `semana` | segunda-feira da semana da reunião | Livro, capítulos e lições do "Ame as Pessoas" treinadas, quando a pessoa cadastra ou ajusta (sem registro, vale o trecho da apostila oficial) |
 | `leitura` | `semana:data` | Evento "li do versículo X ao Y neste dia" e por qual meio (leitura, áudio, Alexa) |
 | `texto` | data | Texto diário feito, meio e anotação |
 | `sentinela` | semana | Total de parágrafos, parágrafos preparados, favoritos com comentário |
 | `meio` | semana | Checklist da reunião de meio de semana |
-| `designacao` | semana | Designação e tipo |
+| `designacao` | UUID | Data e tipo da reunião (meio ou fim de semana) e tipo da designação; registros antigos guardavam só a semana |
 | `saida` | UUID | Saída de campo (data, minutos, modalidade) |
 | `estudante` | UUID | Estudo bíblico (apelido, lição atual) |
 | `familia` | data | Adoração em família (ideia usada, anotação) |
@@ -56,7 +56,7 @@ O progresso da leitura é calculado a partir dos eventos, não de um contador: d
 
 1. A pessoa informa o dia e o horário das reuniões e o prazo (véspera ou dia da reunião).
 2. A janela vai do dia seguinte à reunião anterior até o prazo; exceções (visita do superintendente, assembleia) mudam o dia daquela semana.
-3. A pessoa cadastra o trecho da apostila (o app sugere a continuação da semana anterior).
+3. O trecho vem sozinho dos títulos oficiais de download da apostila ("5 a 11 de outubro (Jeremias 40 a 41)"). Sem rede ou sem a edição publicada, a pessoa cadastra (o app sugere a continuação da semana anterior); o que ela cadastrar prevalece.
 4. O trecho vira unidades de versículo; a divisão por dia pode ser por capítulos, versículos ou minutos de áudio (com os marcadores oficiais).
 5. A cada dia, o restante é redistribuído pelos dias que faltam. Dias antes da instalação não contam como atraso.
 6. "Ouvir" toca exatamente a porção do dia, pulando de um capítulo para o outro pelos marcadores de versículo.

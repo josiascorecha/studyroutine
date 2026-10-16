@@ -33,3 +33,41 @@ export function openExternal(url: string): void {
   }
   window.open(url, '_blank', 'noopener');
 }
+
+const ALEXA_PACKAGE = 'com.amazon.dee.app';
+const ALEXA_PLAY = `https://play.google.com/store/apps/details?id=${ALEXA_PACKAGE}`;
+
+/** O app Alexa só pode ser aberto no celular (Android). No computador não há o que abrir. */
+export function canOpenAlexaApp(): boolean {
+  return isNative() || (typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent));
+}
+
+/**
+ * Abre o app Alexa no celular. Não existe meio oficial de abrir direto a skill nem de mandar um comando:
+ * a pessoa cola o comando na opção de digitar para a Alexa ou fala com o Echo.
+ * Sem o app instalado, abre a página dele na Google Play.
+ */
+export async function openAlexaApp(): Promise<void> {
+  if (isNative()) {
+    try {
+      const { AppLauncher } = await import('@capacitor/app-launcher');
+      const { completed } = await AppLauncher.openUrl({ url: ALEXA_PACKAGE });
+      if (completed) return;
+    } catch {
+      // segue para a loja
+    }
+    openExternal(ALEXA_PLAY);
+    return;
+  }
+  // Navegador no Android: o intent abre o app ou, sem ele, a loja.
+  location.href = `intent://#Intent;package=${ALEXA_PACKAGE};S.browser_fallback_url=${encodeURIComponent(ALEXA_PLAY)};end`;
+}
+
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}

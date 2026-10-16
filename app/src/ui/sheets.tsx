@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { canOpenAlexaApp, copyText, openAlexaApp } from '../app/platform';
 import { useServices } from '../app/context';
 import { weekRangeLabel, type DayView } from '../app/derive';
 import { suggestWeek, T, type WeekRecord } from '../app/model';
@@ -12,6 +13,7 @@ import { ExternalLink, Sheet } from './components';
 export type AlexaContext = { kind: 'dt' } | { kind: 'leitura' } | { kind: 'wt' } | { kind: 'cbs' } | { kind: 'lff'; lesson: number };
 
 export function AlexaSheet({ ctx, view, onClose, onHeard }: { ctx: AlexaContext; view: DayView; onClose: () => void; onHeard?: () => void }) {
+  const [copied, setCopied] = useState('');
   const cmds: string[] = [];
   let title = 'Pela Alexa';
   let note = '';
@@ -45,10 +47,24 @@ export function AlexaSheet({ ctx, view, onClose, onHeard }: { ctx: AlexaContext;
       <div className="stack" style={{ gap: 10 }}>
         <div className="muted">Diga perto do seu Echo:</div>
         {cmds.map((c) => (
-          <div className="cmd" key={c}>
-            “{c}”
+          <div className="cmd cmd-copy" key={c}>
+            <span>“{c}”</span>
+            <button
+              type="button"
+              className="btn ghost"
+              aria-label={`Copiar o comando: ${c}`}
+              onClick={() => void copyText(c).then((ok) => setCopied(ok ? c : ''))}
+            >
+              {copied === c ? 'Copiado' : 'Copiar'}
+            </button>
           </div>
         ))}
+        {canOpenAlexaApp() && (
+          <div className="note">
+            No celular: copie o comando, abra o app Alexa, toque em “Digitar” (ou no botão da Alexa) e cole ou fale o comando. A Amazon não deixa
+            outro app abrir a skill direto nem enviar o comando.
+          </div>
+        )}
         {note && <div className="small">{note}</div>}
         {routine && (
           <div className="note">
@@ -56,8 +72,13 @@ export function AlexaSheet({ ctx, view, onClose, onHeard }: { ctx: AlexaContext;
             texto “{alexa.dailyTextRoutine()}”.
           </div>
         )}
-        <div className="small">A Amazon não permite que outro app acione a Alexa. O StudyRoutine mostra o comando certo e registra quando você ouviu.</div>
+        <div className="small">O StudyRoutine mostra o comando certo e registra quando você ouviu.</div>
         <div className="row-btns">
+          {canOpenAlexaApp() && (
+            <button type="button" className="btn" onClick={() => void openAlexaApp()}>
+              Abrir app Alexa
+            </button>
+          )}
           {onHeard && (
             <button type="button" className="btn primary" onClick={onHeard}>
               Ouvi pela Alexa
@@ -73,9 +94,13 @@ export function AlexaSheet({ ctx, view, onClose, onHeard }: { ctx: AlexaContext;
 
 /** Cadastro do trecho da semana: o início já vem sugerido, a pessoa confere na apostila e confirma. */
 export function WeekSheet({ week, meetingDate, onClose }: { week: DayKey; meetingDate: DayKey; onClose: () => void }) {
-  const { repo } = useServices();
+  const { repo, audio } = useServices();
   const existing = repo.get<WeekRecord>(T.week, week);
-  const initial = useMemo(() => existing ?? { ...suggestWeek(repo, week), lessons: [] }, [repo, week, existing]);
+  const official = audio.program(week);
+  const initial = useMemo(
+    () => existing ?? (official ? { book: official.book, from: official.from, to: official.to, lessons: [] } : { ...suggestWeek(repo, week), lessons: [] }),
+    [repo, week, existing, official],
+  );
   const [book, setBook] = useState(initial.book);
   const [from, setFrom] = useState(initial.from);
   const [to, setTo] = useState(initial.to);
@@ -91,7 +116,8 @@ export function WeekSheet({ week, meetingDate, onClose }: { week: DayKey; meetin
   return (
     <Sheet title="Leitura da semana" onClose={onClose}>
       <div className="muted">
-        Semana de {weekRangeLabel(week)}, para a reunião de {shortDay(meetingDate)}. Confira o trecho na programação e confirme.
+        Semana de {weekRangeLabel(week)}, para a reunião de {shortDay(meetingDate)}.{' '}
+        {official ? 'O trecho já vem da apostila oficial; marque as lições, se quiser, e salve.' : 'Confira o trecho na programação e confirme.'}
       </div>
       <ExternalLink href={links.meetings(meetingDate)}>Conferir na programação</ExternalLink>
       <label className="field">

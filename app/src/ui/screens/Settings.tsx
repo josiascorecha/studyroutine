@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useServices, useSyncVersion } from '../../app/context';
 import type { DayView } from '../../app/derive';
 import { saveSettings, type AppSettings } from '../../app/model';
-import { defaultServer, isNative } from '../../app/platform';
+import { canOpenAlexaApp, defaultServer, isNative, openAlexaApp } from '../../app/platform';
 import { generateRecoveryKey } from '../../sync/crypto';
 import { SyncError } from '../../sync/engine';
 import { links } from '../../domain/links';
@@ -83,6 +83,11 @@ export function Settings({ view, nav }: { view: DayView; nav: Nav }) {
       <section className="card">
         <SwitchRow title="Alexa" hint="Comandos de voz da skill oficial do JW.ORG." on={s.alexa} onChange={(v) => save({ alexa: v })} />
         <div className="row-btns">
+          {canOpenAlexaApp() && (
+            <button type="button" className="btn" onClick={() => void openAlexaApp()}>
+              Abrir app Alexa
+            </button>
+          )}
           <ExternalLink href={links.alexaSkill()}>Skill oficial na Amazon</ExternalLink>
           <ExternalLink href={links.alexaHelp()}>Lista de comandos</ExternalLink>
         </div>

@@ -1,5 +1,6 @@
 import type { ChapterAudio } from '../domain/reading';
 import { parseStudyWeek, type StudyWeek } from '../domain/watchtower';
+import { parseWorkbookWeek, type WorkbookWeek } from '../domain/workbook';
 
 /**
  * Metadados do áudio oficial, do mesmo serviço que a página de download do jw.org usa.
@@ -64,9 +65,24 @@ export function parseStudyIssue(data: unknown, issue: string): StudyArticleAudio
   return out;
 }
 
+/** Semanas da apostila (mwb) pelos títulos dos arquivos RTF da edição: só os títulos, nada do conteúdo. */
+export function parseWorkbookIssue(data: unknown, issue: string): WorkbookWeek[] {
+  const files = (data as { files?: Record<string, { RTF?: ApiFile[] }> })?.files?.[LANG]?.RTF ?? [];
+  const y = Number(issue.slice(0, 4));
+  const m = Number(issue.slice(4, 6));
+  const out: WorkbookWeek[] = [];
+  for (const f of files) {
+    const w = f.title ? parseWorkbookWeek(f.title, y, m) : null;
+    if (w && !out.some((o) => o.start === w.start)) out.push(w);
+  }
+  return out;
+}
+
 export const audioApi = {
   chapterUrl: (book: number, chapter: number) =>
     `${API}?output=json&pub=nwt&fileformat=MP3&alllangs=0&langwritten=${LANG}&txtCMSLang=${LANG}&booknum=${book}&track=${chapter}`,
+  workbookUrl: (issue: string) =>
+    `${API}?output=json&pub=mwb&issue=${issue}&fileformat=RTF&alllangs=0&langwritten=${LANG}&txtCMSLang=${LANG}`,
   issueUrl: (issue: string) =>
     `${API}?output=json&pub=w&issue=${issue}&fileformat=MP3&alllangs=0&langwritten=${LANG}&txtCMSLang=${LANG}`,
 };

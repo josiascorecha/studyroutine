@@ -1,8 +1,8 @@
 import { actions } from '../../app/actions';
 import { useAudioVersion, useServices } from '../../app/context';
 import type { DayView } from '../../app/derive';
-import { familyLog, sessions } from '../../app/model';
-import { cap, weekday, dayWordDm, fmtAudio, fmtMinutes, fmtTime, longDay, MESES, shortDay } from '../../domain/dates';
+import { assignmentWhen, familyLog, sessions, T, type Assignment } from '../../app/model';
+import { addDays, cap, weekday, dayWordDm, fmtAudio, fmtMinutes, fmtTime, longDay, MESES, shortDay } from '../../domain/dates';
 import { links } from '../../domain/links';
 import { monthSessions } from '../../domain/ministry';
 import { portionLabel, portionRefs, portionSeconds } from '../../domain/reading';
@@ -187,6 +187,28 @@ export function Today({ view, nav }: { view: DayView; nav: Nav }) {
           </div>
         </section>
       )}
+
+      {(() => {
+        const soon = svc.repo
+          .list<Assignment>(T.assignment)
+          .map((x) => ({ a: x.data, when: assignmentWhen(x.data, s) }))
+          .filter((x) => x.when && x.when.date >= cur && x.when.date <= addDays(cur, 7))
+          .sort((x, y) => (x.when!.date < y.when!.date ? -1 : 1))[0];
+        if (!soon?.when) return null;
+        const { date, kind } = soon.when;
+        return (
+          <section className="card" aria-label="Designação próxima">
+            <div className="kicker">{date === cur ? 'Hoje' : cap(dayWordDm(date))} · Designação</div>
+            <div className="card-title">{soon.a.type}</div>
+            <div className="muted">{kind === 'meio' ? 'Reunião de meio de semana' : 'Reunião de fim de semana'} às {fmtTime(kind === 'meio' ? s.midTime : s.wkTime)}.</div>
+            <div className="row-btns">
+              <button type="button" className="btn" onClick={() => nav.go('reunioes', kind)}>
+                Ver na aba Reuniões
+              </button>
+            </div>
+          </section>
+        );
+      })()}
 
       {s.familyDay !== null && weekday(cur) === s.familyDay && (
         <section className="card" aria-label="Adoração em família">

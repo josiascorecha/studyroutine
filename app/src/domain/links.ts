@@ -20,6 +20,8 @@ export const links = {
   bible: (book: number, c1: number, v1: number, c2: number, v2: number) =>
     `https://www.jw.org/finder?wtlocale=${LOCALE}&prefer=lang&pub=nwtsty&bible=${bibleCode(book, c1, v1)}-${bibleCode(book, c2, v2)}`,
   wolChapter: (book: number, chapter: number) => `${WOL}/b/${WOL_LIB}/nwtsty/${book}/${chapter}`,
+  /** Abre o artigo direto no parágrafo (no Android, no JW Library quando instalado). */
+  paragraph: (docid: number | string, par: number) => `https://www.jw.org/finder?wtlocale=${LOCALE}&docid=${docid}&par=${par}`,
   wolDoc: (docid: number | string) => `${WOL}/d/${WOL_LIB}/${docid}`,
   wolSearch: (q: string) => `${WOL}/s/${WOL_LIB}?q=${encodeURIComponent(q)}`,
   publication: (symbol: string) => `${WOL}/publication/${WOL_LIB}/${symbol}`,

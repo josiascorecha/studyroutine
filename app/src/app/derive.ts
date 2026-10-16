@@ -27,7 +27,9 @@ const EMPTY_MID: MidweekPrep = { joias: '', joiasOk: false, faca: false, cbs: fa
 export function deriveDay(repo: Repo, audio: AudioStore, cur: DayKey): DayView {
   const s = getSettings(repo);
   const win = readingWindow(cur, s);
-  const week = weekRecord(repo, win.meeting.week);
+  const prog = audio.program(win.meeting.week);
+  const week: WeekRecord | undefined =
+    weekRecord(repo, win.meeting.week) ?? (prog ? { book: prog.book, from: prog.from, to: prog.to, lessons: [], official: true } : undefined);
   const units = week ? buildUnits(week, (c) => audio.chapter(week.book, c)) : null;
   const plan =
     week && units

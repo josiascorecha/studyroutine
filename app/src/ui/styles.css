@@ -491,6 +491,17 @@ textarea.input {
   font-size: calc(14.5px * var(--scale));
 }
 
+.cmd-copy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.cmd-copy .btn {
+  flex: none;
+}
+
 .day-row {
   display: flex;
   align-items: center;

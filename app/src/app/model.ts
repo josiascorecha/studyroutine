@@ -1,6 +1,6 @@
 import { chapterCount, isBook, nextChapter } from '../domain/bible';
-import { localDayKey, type DayKey } from '../domain/dates';
-import type { MeetingSettings } from '../domain/meetings';
+import { addDays, localDayKey, monday, type DayKey } from '../domain/dates';
+import { midweekOf, weekendOf, type MeetingSettings } from '../domain/meetings';
 import type { FieldSession, MinistryMode, Student } from '../domain/ministry';
 import type { ReadingEvent, ReadVia, SplitMode, WeekReading } from '../domain/reading';
 import type { Repo } from '../data/repo';
@@ -78,6 +78,8 @@ export async function saveSettings(repo: Repo, patch: Partial<AppSettings>): Pro
 export interface WeekRecord extends WeekReading {
   /** Lições do "Ame as Pessoas — Faça Discípulos" treinadas na reunião (opcional). */
   lessons: number[];
+  /** Veio da apostila oficial (não foi cadastrado pela pessoa). Não é gravado. */
+  official?: boolean;
 }
 
 export interface DailyTextRecord {
@@ -99,21 +101,52 @@ export interface MidweekPrep {
   cbs: boolean;
 }
 
+export type MeetingKind = 'meio' | 'fim';
+
 export interface Assignment {
-  week: DayKey;
+  /** Data da reunião da designação. */
+  date?: DayKey;
+  kind?: MeetingKind;
   type: string;
+  /** Formato antigo: só a semana (reunião de meio de semana). */
+  week?: DayKey;
 }
 
-export const ASSIGNMENT_TYPES = [
-  'Leitura da Bíblia',
-  'Iniciando conversas',
-  'Cultivando o interesse',
-  'Fazendo discípulos',
-  'Explicando suas crenças',
-  'Discurso',
-  'Oração',
-  'Outra',
-];
+export const ASSIGNMENT_TYPES: Record<MeetingKind, string[]> = {
+  meio: [
+    'Leitura da Bíblia',
+    'Iniciando conversas',
+    'Cultivando o interesse',
+    'Fazendo discípulos',
+    'Explicando suas crenças',
+    'Discurso',
+    'Joias espirituais',
+    'Nossa vida cristã',
+    'Estudo bíblico de congregação',
+    'Presidente',
+    'Oração',
+    'Outra',
+  ],
+  fim: ['Discurso público', 'Presidente', 'Leitor de A Sentinela', 'Oração', 'Outra'],
+};
+
+/** Data e tipo de reunião de uma designação (aceita o formato antigo, que guardava só a semana). */
+export function assignmentWhen(a: Assignment, s: MeetingSettings): { date: DayKey; kind: MeetingKind } | null {
+  if (a.date) return { date: a.date, kind: a.kind ?? 'meio' };
+  if (a.week) return { date: midweekOf(a.week, s), kind: 'meio' };
+  return null;
+}
+
+/** Próximas reuniões (hoje inclusive), das duas, em ordem de data. */
+export function upcomingMeetings(cur: DayKey, s: MeetingSettings, weeks = 8): { date: DayKey; kind: MeetingKind; week: DayKey }[] {
+  const out: { date: DayKey; kind: MeetingKind; week: DayKey }[] = [];
+  const first = monday(cur);
+  for (let i = 0; i <= weeks; i++) {
+    const week = addDays(first, 7 * i);
+    out.push({ date: midweekOf(week, s), kind: 'meio', week }, { date: weekendOf(week, s), kind: 'fim', week });
+  }
+  return out.filter((m) => m.date >= cur).sort((a, b) => (a.date < b.date ? -1 : 1)).slice(0, weeks * 2);
+}
 
 export const SERVICE_KINDS = ['Casa em casa', 'Testemunho público', 'Informal', 'Cartas e telefone'];
 
