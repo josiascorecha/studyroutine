@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 
 const SEXTA = '2026-10-02';
@@ -40,7 +41,7 @@ function silentWav(): Buffer {
 /** Simula o serviço de metadados e os MP3 oficiais (formato real, conteúdo de teste). */
 const ES_PDF = 'https://cfp2.jw-cdn.org/a/teste/1/o/es26_T.pdf';
 
-async function mockOfficial(page: Page, opts: { workbook?: boolean } = {}) {
+async function mockOfficial(page: Page, opts: { workbook?: boolean; esCors?: boolean } = {}) {
   await page.route('https://b.jw-cdn.org/**', (route) => {
     const u = new URL(route.request().url());
     const pub = u.searchParams.get('pub');
@@ -99,7 +100,10 @@ async function mockOfficial(page: Page, opts: { workbook?: boolean } = {}) {
     return route.fulfill({ status: 404, body: '' });
   });
   await page.route('https://cfp2.jw-cdn.org/**', (route) =>
-    route.request().url() === ES_PDF
+    route.request().url() === ES_PDF && opts.esCors === false
+      ? // Como o CDN real faz com outros sites: o navegador recusa (CORS) e o download falha.
+        route.abort('accessdenied')
+      : route.request().url() === ES_PDF
       ? route.fulfill({
           status: 200,
           contentType: 'application/pdf',
@@ -110,7 +114,7 @@ async function mockOfficial(page: Page, opts: { workbook?: boolean } = {}) {
   );
 }
 
-async function onboard(page: Page, day = SEXTA, opts: { workbook?: boolean } = {}) {
+async function onboard(page: Page, day = SEXTA, opts: { workbook?: boolean; esCors?: boolean } = {}) {
   await mockOfficial(page, opts);
   await page.goto(`/?hoje=${day}`);
   await page.getByRole('button', { name: 'Começar' }).click();
@@ -328,4 +332,25 @@ test('texto diário: mostra só o dia, recortado do PDF oficial guardado no apar
   await page.getByRole('region', { name: 'Texto diário' }).getByRole('button', { name: 'Ler aqui' }).click();
   await expect(page.getByRole('img', { name: /Texto diário de sábado, 3 de outubro/ }).first()).toBeVisible({ timeout: 30_000 });
   expect(downloads).toBe(1);
+});
+
+test('texto diário na web: CDN recusa, a pessoa escolhe o PDF baixado do jw.org', async ({ page }) => {
+  await onboard(page, SEXTA, { esCors: false });
+  await page.getByRole('region', { name: 'Texto diário' }).getByRole('button', { name: 'Ler aqui' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Texto diário' });
+  await expect(sheet.getByRole('link', { name: 'Baixar o PDF no jw.org' })).toHaveAttribute('href', ES_PDF);
+
+  // Um arquivo qualquer é recusado e não fica guardado.
+  const input = sheet.getByLabel('Escolher o arquivo baixado');
+  await input.setInputFiles({ name: 'outro.pdf', mimeType: 'application/pdf', buffer: Buffer.from('%PDF-1.4 nada') });
+  await expect(sheet.getByText(/Esse arquivo não é o livro de 2026|Não foi possível abrir esse arquivo/)).toBeVisible({ timeout: 30_000 });
+
+  await input.setInputFiles(fileURLToPath(new URL('./fixtures/es-teste-2026.pdf', import.meta.url)));
+  await expect(sheet.getByRole('img', { name: /Texto diário de sexta-feira, 2 de outubro/ }).first()).toBeVisible({ timeout: 30_000 });
+  await expect(sheet.getByRole('link', { name: 'Baixar o PDF no jw.org' })).toBeHidden();
+
+  // Depois abre direto, sem pedir o arquivo de novo.
+  await page.goto('/?hoje=2026-10-03');
+  await page.getByRole('region', { name: 'Texto diário' }).getByRole('button', { name: 'Ler aqui' }).click();
+  await expect(page.getByRole('img', { name: /Texto diário de sábado, 3 de outubro/ }).first()).toBeVisible({ timeout: 30_000 });
 });

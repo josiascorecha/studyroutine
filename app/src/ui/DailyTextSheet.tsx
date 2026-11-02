@@ -2,12 +2,14 @@ import { useEffect, useRef, useState } from 'react';
 import { actions } from '../app/actions';
 import { useServices } from '../app/context';
 import type { DayView } from '../app/derive';
-import { isNative } from '../app/platform';
 import { EsBook } from '../dailytext/esBook';
 import type { Repo } from '../data/repo';
 import { longDay } from '../domain/dates';
 import { links } from '../domain/links';
 import { ExternalLink, Sheet } from './components';
+
+/** Página oficial do livro do ano (tem o botão de download), se o serviço de metadados não respondeu. */
+const esPage = (year: number) => `https://www.jw.org/finder?wtlocale=T&pub=es${String(year).slice(2)}`;
 
 const books = new Map<number, EsBook>();
 function bookFor(repo: Repo, year: number): EsBook {
@@ -26,38 +28,63 @@ export function DailyTextSheet({ view, onClose }: { view: DayView; onClose: () =
   const dt = a.dailyText();
   const { cur } = view;
   const box = useRef<HTMLDivElement>(null);
-  const [state, setState] = useState<'carregando' | 'pronto' | 'falhou'>('carregando');
+  const [state, setState] = useState<'carregando' | 'pronto' | 'arquivo' | 'falhou'>('carregando');
   const [msg, setMsg] = useState('Abrindo o livro…');
+  const [fileMsg, setFileMsg] = useState('');
+  const alive = useRef(true);
+  const year = Number(cur.slice(0, 4));
+  const book = bookFor(svc.repo, year);
+
+  async function show(): Promise<void> {
+    const width = box.current?.clientWidth || 340;
+    const canvases = await book.render(cur, width);
+    if (!canvases.length) throw new Error('dia não encontrado');
+    if (!alive.current || !box.current) return;
+    box.current.replaceChildren(
+      ...canvases.map((c) => {
+        c.className = 'dt-page';
+        c.setAttribute('role', 'img');
+        c.setAttribute('aria-label', `Texto diário de ${longDay(cur).toLowerCase()}, página do livro oficial`);
+        return c;
+      }),
+    );
+    setState('pronto');
+  }
 
   useEffect(() => {
-    let alive = true;
-    const year = Number(cur.slice(0, 4));
-    const book = bookFor(svc.repo, year);
+    alive.current = true;
     (async () => {
       try {
-        const ok = await book.ensure((m) => alive && setMsg(m));
-        if (!ok || !alive) throw new Error('indisponível');
-        const width = box.current?.clientWidth || 340;
-        const canvases = await book.render(cur, width);
-        if (!canvases.length) throw new Error('dia não encontrado');
-        if (!alive || !box.current) return;
-        box.current.replaceChildren(
-          ...canvases.map((c) => {
-            c.className = 'dt-page';
-            c.setAttribute('role', 'img');
-            c.setAttribute('aria-label', `Texto diário de ${longDay(cur).toLowerCase()}, página do livro oficial`);
-            return c;
-          }),
-        );
-        setState('pronto');
+        const st = await book.ensure((m) => alive.current && setMsg(m));
+        if (!alive.current) return;
+        if (st === 'arquivo') return setState('arquivo');
+        if (st !== 'pronto') throw new Error('indisponível');
+        await show();
       } catch {
-        if (alive) setState('falhou');
+        if (alive.current) setState('falhou');
       }
     })();
     return () => {
-      alive = false;
+      alive.current = false;
     };
-  }, [svc.repo, cur]);
+  }, [book, cur]);
+
+  async function onFile(file: File | undefined) {
+    if (!file) return;
+    setFileMsg('Conferindo o arquivo…');
+    try {
+      const r = await book.importFile(await file.arrayBuffer(), (m) => alive.current && setFileMsg(m));
+      if (!alive.current) return;
+      if (r !== 'ok') {
+        setFileMsg(`Esse arquivo não é o livro de ${year} em português (es${String(year).slice(2)}_T.pdf). Baixe pelo botão acima e escolha de novo.`);
+        return;
+      }
+      setFileMsg('');
+      await show();
+    } catch {
+      if (alive.current) setFileMsg('Não foi possível abrir esse arquivo. Escolha o PDF baixado do jw.org.');
+    }
+  }
 
   return (
     <Sheet title="Texto diário" onClose={onClose}>
@@ -67,11 +94,35 @@ export function DailyTextSheet({ view, onClose }: { view: DayView; onClose: () =
           {msg}
         </div>
       )}
+      {state === 'arquivo' && (
+        <div className="dt-import">
+          <p className="small">
+            No navegador, o jw.org não deixa outro site baixar o livro sozinho. Faça isto uma vez por ano e depois ele abre direto, até sem internet:
+          </p>
+          <ol className="steps">
+            <li>
+              <ExternalLink href={book.officialUrl ?? esPage(year)} className="btn">
+                Baixar o PDF no jw.org
+              </ExternalLink>
+            </li>
+            <li>
+              <label className="btn primary file-btn">
+                Escolher o arquivo baixado
+                <input type="file" accept="application/pdf,.pdf" onChange={(e) => void onFile(e.target.files?.[0])} />
+              </label>
+            </li>
+          </ol>
+          <p className="small">O arquivo é o es{String(year).slice(2)}_T.pdf e fica só neste navegador; nada vai para o servidor.</p>
+          {fileMsg && (
+            <div className="note" role="status">
+              {fileMsg}
+            </div>
+          )}
+        </div>
+      )}
       {state === 'falhou' && (
         <div className="note warn" role="alert">
-          {isNative()
-            ? 'Não foi possível abrir o livro agora. Confira a internet (só é preciso na primeira vez do ano) ou abra no jw.org.'
-            : 'No navegador, o jw.org não deixa outro site baixar o livro. No app Android funciona, e sem internet depois da primeira vez. Aqui, abra no jw.org.'}
+          Não foi possível abrir o livro agora. Confira a internet (só é preciso na primeira vez do ano) ou abra no jw.org.
         </div>
       )}
       <div ref={box} className="dt-pages" aria-live="polite" />

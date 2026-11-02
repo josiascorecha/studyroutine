@@ -59,7 +59,7 @@ O livro do ano "Examine as Escrituras Diariamente" tem PDF no serviço de downlo
 
 - Base: a exceção dos Termos para apps gratuitos e não comerciais que baixam PDF das áreas públicas.
 - Leitura em voz alta não foi feita: exigiria extrair o texto do PDF, o que os Termos proíbem; a skill oficial da Alexa já lê o texto diário.
-- No navegador não funciona: o CDN não permite que outro site baixe o arquivo (CORS). A versão web mostra o aviso e o link para o jw.org.
+- No navegador o CDN não permite que outro site baixe o arquivo (CORS). A versão web tenta e, se o navegador recusar, pede que a pessoa baixe o PDF no jw.org (link direto para o arquivo oficial, ou a página do livro em `jw.org/finder?wtlocale=T&pub=es26`) e escolha o arquivo baixado. O app confere que é o livro do ano (os 365/366 títulos, em ordem) antes de guardar no navegador; arquivo errado não fica guardado. Nada passa pelo servidor do StudyRoutine: repassar o PDF pela VPS foi descartado, porque o servidor passaria a distribuir conteúdo do jw.org.
 - Se o PDF de um ano tiver outra diagramação e o índice não achar os 365 (ou 366) dias em ordem, com o dia da semana certo, o app não mostra nada recortado e oferece "Abrir no jw.org".
 
 ## Parágrafo no JW Library

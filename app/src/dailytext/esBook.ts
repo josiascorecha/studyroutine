@@ -93,7 +93,12 @@ async function pagesText(doc: PdfDoc): Promise<PdfPageText[]> {
   return out;
 }
 
-export type EsStatus = 'pronto' | 'indisponivel';
+/**
+ * pronto: PDF e índice no aparelho. arquivo: no navegador o CDN não deixa baixar (CORS), então a
+ * pessoa baixa no jw.org e escolhe o arquivo. indisponivel: sem rede (Android) ou diagramação diferente.
+ */
+export type EsStatus = 'pronto' | 'arquivo' | 'indisponivel';
+export type ImportResult = 'ok' | 'outro-arquivo';
 
 export interface EsBookDeps {
   repo: Repo;
@@ -105,7 +110,9 @@ export interface EsBookDeps {
 export class EsBook {
   private doc: PdfDoc | null = null;
   private index: DailyTextIndex | null = null;
-  private loading: Promise<boolean> | null = null;
+  private loading: Promise<EsStatus> | null = null;
+  /** Endereço oficial do PDF do ano, quando o serviço de metadados respondeu (para o botão de baixar). */
+  officialUrl: string | null = null;
 
   constructor(
     private deps: EsBookDeps,
@@ -122,35 +129,72 @@ export class EsBook {
   }
 
   /** Garante PDF + índice. onProgress recebe mensagens curtas para a tela. */
-  ensure(onProgress?: (msg: string) => void): Promise<boolean> {
+  ensure(onProgress?: (msg: string) => void): Promise<EsStatus> {
     this.loading ??= this.load(onProgress).finally(() => {
       this.loading = null;
     });
     return this.loading;
   }
 
-  private async load(onProgress?: (msg: string) => void): Promise<boolean> {
-    if (this.doc && this.index) return true;
+  private async load(onProgress?: (msg: string) => void): Promise<EsStatus> {
+    if (this.doc && this.index) return 'pronto';
     const { repo } = this.deps;
     let bytes = await repo.getCache<ArrayBuffer>(this.key('pdf'));
     if (!bytes) {
-      onProgress?.('Consultando o jw.org…');
-      const meta = pickPdf(await fetchJson(esApi.metaUrl(this.year), this.deps.fetchImpl), this.year);
-      if (!meta) return false;
-      onProgress?.(`Baixando o livro de ${this.year}${meta.size ? ` (${(meta.size / 1048576).toFixed(1)} MB)` : ''}, só desta vez…`);
-      bytes = await (this.deps.downloader ?? download)(meta.url);
+      const web = !isNative() && !this.deps.downloader;
+      try {
+        onProgress?.('Consultando o jw.org…');
+        const meta = pickPdf(await fetchJson(esApi.metaUrl(this.year), this.deps.fetchImpl), this.year);
+        if (!meta) return web ? 'arquivo' : 'indisponivel';
+        this.officialUrl = meta.url;
+        onProgress?.(`Baixando o livro de ${this.year}${meta.size ? ` (${(meta.size / 1048576).toFixed(1)} MB)` : ''}, só desta vez…`);
+        bytes = await (this.deps.downloader ?? download)(meta.url);
+      } catch (e) {
+        // No navegador o CDN costuma recusar (CORS): a pessoa baixa no jw.org e escolhe o arquivo.
+        if (web) return 'arquivo';
+        throw e;
+      }
+      // Guarda mesmo se a diagramação não bater, para não baixar 3 MB de novo a cada tentativa.
       await repo.setCache(this.key('pdf'), bytes);
+      return (await this.adopt(bytes, onProgress, true)) ? 'pronto' : 'indisponivel';
     }
     this.doc = await openDoc(bytes);
     let index: DailyTextIndex | null = (await repo.getCache<DailyTextIndex>(this.key('index'))) ?? null;
     if (!index) {
       onProgress?.('Preparando o livro no aparelho…');
       index = buildDailyTextIndex(await pagesText(this.doc), this.year);
-      if (!index) return false;
+      if (!index) return 'indisponivel';
       await repo.setCache(this.key('index'), index);
     }
     this.index = index;
+    return 'pronto';
+  }
+
+  /** Abre, indexa e só então guarda: um arquivo escolhido que não é o livro do ano nunca fica no aparelho. */
+  private async adopt(bytes: ArrayBuffer, onProgress?: (msg: string) => void, saved = false): Promise<boolean> {
+    let doc: PdfDoc;
+    try {
+      doc = await openDoc(bytes);
+    } catch {
+      return false;
+    }
+    onProgress?.('Preparando o livro no aparelho…');
+    const index = buildDailyTextIndex(await pagesText(doc), this.year);
+    if (!index) {
+      void doc.destroy();
+      return false;
+    }
+    if (!saved) await this.deps.repo.setCache(this.key('pdf'), bytes);
+    await this.deps.repo.setCache(this.key('index'), index);
+    this.doc = doc;
+    this.index = index;
     return true;
+  }
+
+  /** PDF que a pessoa baixou no jw.org e escolheu no aparelho (caminho da versão web). */
+  async importFile(bytes: ArrayBuffer, onProgress?: (msg: string) => void): Promise<ImportResult> {
+    onProgress?.('Conferindo o arquivo…');
+    return (await this.adopt(bytes, onProgress)) ? 'ok' : 'outro-arquivo';
   }
 
   segments(day: DayKey): PdfSegment[] | null {
