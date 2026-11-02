@@ -9,6 +9,7 @@ import { filledStarts } from '../domain/reading';
 import { bookName } from '../domain/bible';
 import { fmtClock } from '../domain/dates';
 import { Icon, PlayIcon, Progress, type IconName } from './components';
+import { DailyTextSheet } from './DailyTextSheet';
 import { AlexaSheet, MeetingCardSheet, WeekSheet, type AlexaContext } from './sheets';
 import { Meetings, type MeetTab } from './screens/Meetings';
 import { Ministry } from './screens/Ministry';
@@ -20,7 +21,7 @@ import { Today } from './screens/Today';
 import { DeleteData, Privacy } from './screens/Legal';
 
 export type Tab = 'hoje' | 'leitura' | 'reunioes' | 'estudo' | 'ministerio' | 'ajustes';
-export type SheetState = { type: 'alexa'; ctx: AlexaContext } | { type: 'week' } | { type: 'card'; title: string } | null;
+export type SheetState = { type: 'alexa'; ctx: AlexaContext } | { type: 'week' } | { type: 'card'; title: string } | { type: 'dt' } | null;
 
 export interface Nav {
   go(tab: Tab, meetTab?: MeetTab): void;
@@ -162,6 +163,7 @@ function MainApp() {
       )}
       {sheet?.type === 'week' && <WeekSheet week={view.win.meeting.week} meetingDate={view.win.meeting.date} onClose={() => setSheet(null)} />}
       {sheet?.type === 'card' && <MeetingCardSheet view={view} title={sheet.title} onClose={() => setSheet(null)} />}
+      {sheet?.type === 'dt' && <DailyTextSheet view={view} onClose={() => setSheet(null)} />}
     </div>
   );
 }

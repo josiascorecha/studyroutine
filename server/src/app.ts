@@ -66,7 +66,7 @@ export async function buildApp(cfg: Config, db: Db, catalog: Catalog, opts: { lo
         imgSrc: ["'self'", 'data:'],
         fontSrc: ["'self'"],
         // Metadados do áudio oficial (b.jw-cdn.org) e o próprio servidor.
-        connectSrc: ["'self'", 'https://b.jw-cdn.org'],
+        connectSrc: ["'self'", 'https://b.jw-cdn.org', 'https://*.jw-cdn.org'],
         // Arquivos MP3 oficiais (cfp2.jw-cdn.org e afins).
         mediaSrc: ["'self'", 'https://*.jw-cdn.org'],
         workerSrc: ["'self'"],

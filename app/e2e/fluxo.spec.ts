@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { expect, test, type Page } from '@playwright/test';
 
 const SEXTA = '2026-10-02';
@@ -37,10 +38,15 @@ function silentWav(): Buffer {
 }
 
 /** Simula o serviço de metadados e os MP3 oficiais (formato real, conteúdo de teste). */
+const ES_PDF = 'https://cfp2.jw-cdn.org/a/teste/1/o/es26_T.pdf';
+
 async function mockOfficial(page: Page, opts: { workbook?: boolean } = {}) {
   await page.route('https://b.jw-cdn.org/**', (route) => {
     const u = new URL(route.request().url());
     const pub = u.searchParams.get('pub');
+    if (pub === 'es26') {
+      return route.fulfill({ json: { files: { T: { PDF: [{ title: 'Livro de teste', file: { url: ES_PDF, checksum: 'x' }, filesize: 139431 }] } } } });
+    }
     if (pub === 'mwb' && opts.workbook && u.searchParams.get('issue') === '202609') {
       return route.fulfill({
         json: {
@@ -92,7 +98,16 @@ async function mockOfficial(page: Page, opts: { workbook?: boolean } = {}) {
     }
     return route.fulfill({ status: 404, body: '' });
   });
-  await page.route('https://cfp2.jw-cdn.org/**', (route) => route.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }));
+  await page.route('https://cfp2.jw-cdn.org/**', (route) =>
+    route.request().url() === ES_PDF
+      ? route.fulfill({
+          status: 200,
+          contentType: 'application/pdf',
+          headers: { 'access-control-allow-origin': '*' },
+          body: readFileSync(new URL('./fixtures/es-teste-2026.pdf', import.meta.url)),
+        })
+      : route.fulfill({ status: 200, contentType: 'audio/wav', body: silentWav() }),
+  );
 }
 
 async function onboard(page: Page, day = SEXTA, opts: { workbook?: boolean } = {}) {
@@ -288,4 +303,29 @@ test('leitura vem da apostila oficial; joias, designação com data e Alexa', as
   await page.getByRole('button', { name: /Copiar o comando: Alexa, ler o texto diário/ }).click();
   await expect(page.getByText('Copiado', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => navigator.clipboard.readText())).toBe('Alexa, ler o texto diário de hoje do jw.org');
+});
+
+test('texto diário: mostra só o dia, recortado do PDF oficial guardado no aparelho', async ({ page }) => {
+  await onboard(page);
+  let downloads = 0;
+  page.on('request', (r) => {
+    if (r.url() === ES_PDF) downloads++;
+  });
+  await page.getByRole('region', { name: 'Texto diário' }).getByRole('button', { name: 'Ler aqui' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Texto diário' });
+  await expect(sheet.getByRole('img', { name: /Texto diário de sexta-feira, 2 de outubro/ }).first()).toBeVisible({ timeout: 30_000 });
+  await expect(sheet.getByText('Página do PDF oficial do jw.org, guardado neste aparelho.')).toBeVisible();
+  // O recorte tem a largura da tela e a altura só do dia (bem menor que uma página inteira).
+  const box = await sheet.locator('canvas.dt-page').first().boundingBox();
+  expect(box!.width).toBeGreaterThan(200);
+  expect(box!.height).toBeLessThan(box!.width * 2);
+  await sheet.getByRole('button', { name: 'Marcar como lido' }).click();
+  await expect(sheet).toBeHidden();
+  await expect(page.getByRole('region', { name: 'Texto diário' }).getByText('Feito')).toBeVisible();
+
+  // No dia seguinte abre sem baixar de novo.
+  await page.goto('/?hoje=2026-10-03');
+  await page.getByRole('region', { name: 'Texto diário' }).getByRole('button', { name: 'Ler aqui' }).click();
+  await expect(page.getByRole('img', { name: /Texto diário de sábado, 3 de outubro/ }).first()).toBeVisible({ timeout: 30_000 });
+  expect(downloads).toBe(1);
 });

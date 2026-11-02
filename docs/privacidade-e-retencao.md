@@ -12,7 +12,7 @@ Rascunho técnico para apoiar a política de privacidade (página `/privacidade`
 
 | Lugar | O que fica | Quem controla | Por quanto tempo |
 |---|---|---|---|
-| Aparelho (IndexedDB) | Todos os registros, ajustes, chave de sincronização, cache do áudio e do catálogo | A pessoa | Até ela apagar os dados do app ou desinstalar |
+| Aparelho (IndexedDB) | Todos os registros, ajustes, chave de sincronização, cache do áudio e do catálogo, PDF do texto diário do ano | A pessoa | Até ela apagar os dados do app ou desinstalar |
 | Backup do Android (conta Google da pessoa) | Pode incluir os dados do app, conforme as configurações do celular | A pessoa e o Android | Regras do Google |
 | Servidor: tabela `vaults` | Id do cofre, SHA-256 do token, contadores, dia de criação, último dia de uso | Mantenedor | Até a exclusão pela pessoa ou 548 dias sem uso |
 | Servidor: tabela `records` | Blobs cifrados e ids opacos | Mantenedor (sem conseguir ler) | Igual ao cofre |
@@ -25,7 +25,7 @@ Rascunho técnico para apoiar a política de privacidade (página `/privacidade`
 
 Sem cadastro, e-mail, telefone ou senha; sem anúncios; sem ferramentas de análise ou rastreamento; sem SDKs de terceiros; sem localização; sem acesso a contatos ou arquivos.
 
-Conexões que saem do aparelho: servidor do StudyRoutine (só com sincronização ligada, e para o catálogo), serviço de metadados de áudio e CDN do jw.org (ao preparar ou tocar áudio) e os links abertos pela pessoa.
+Conexões que saem do aparelho: servidor do StudyRoutine (só com sincronização ligada, e para o catálogo), serviço de metadados e CDN do jw.org (ao preparar ou tocar áudio e ao baixar o PDF do texto diário) e os links abertos pela pessoa.
 
 ## Direitos e exclusão
 

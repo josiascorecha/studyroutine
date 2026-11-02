@@ -771,6 +771,24 @@ textarea.input {
   flex-shrink: 0;
 }
 
+.dt-pages {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.dt-pages:empty {
+  display: none;
+}
+
+.dt-page {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 .sheet-wrap {
   position: fixed;
   inset: 0;

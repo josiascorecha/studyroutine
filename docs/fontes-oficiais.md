@@ -53,6 +53,15 @@ https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=w&issue=202
 https://b.jw-cdn.org/apis/pub-media/GETPUBMEDIALINKS?output=json&pub=mwb&issue=202609&fileformat=RTF&alllangs=0&langwritten=T&txtCMSLang=T
 ```
 
+## Texto diário no próprio app (PDF oficial)
+
+O livro do ano "Examine as Escrituras Diariamente" tem PDF no serviço de downloads (`pub=es26&fileformat=PDF`, arquivo `es26_T.pdf`, cerca de 3 MB; não há MP3). No Android, o botão "Ler aqui" baixa esse PDF uma vez por ano direto do `*.jw-cdn.org`, guarda no aparelho e mostra a página do dia, recortada no título do dia até o título seguinte (inclusive quando o texto continua na outra coluna). O PDF é desenhado sem alteração; o app não copia nem guarda o texto, só a posição dos títulos para saber onde recortar. Nada disso passa pelo servidor do StudyRoutine.
+
+- Base: a exceção dos Termos para apps gratuitos e não comerciais que baixam PDF das áreas públicas.
+- Leitura em voz alta não foi feita: exigiria extrair o texto do PDF, o que os Termos proíbem; a skill oficial da Alexa já lê o texto diário.
+- No navegador não funciona: o CDN não permite que outro site baixe o arquivo (CORS). A versão web mostra o aviso e o link para o jw.org.
+- Se o PDF de um ano tiver outra diagramação e o índice não achar os 365 (ou 366) dias em ordem, com o dia da semana certo, o app não mostra nada recortado e oferece "Abrir no jw.org".
+
 ## Parágrafo no JW Library
 
 `https://www.jw.org/finder?wtlocale=T&docid=DOCID&par=N` abre o artigo no parágrafo N (conferido em 15/10/2026: redireciona para `…#pN`). No Android, o sistema oferece o JW Library quando ele está instalado. O app copia o comentário preparado e abre o parágrafo; a pessoa cola na nota.

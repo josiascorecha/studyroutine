@@ -79,6 +79,9 @@ export function Today({ view, nav }: { view: DayView; nav: Nav }) {
         <div className="card-title">Texto de {longDay(cur).toLowerCase()}</div>
         <div className="muted">Examine as Escrituras Diariamente</div>
         <div className="row-btns">
+          <button type="button" className="btn primary" onClick={() => nav.sheet({ type: 'dt' })}>
+            Ler aqui
+          </button>
           <ExternalLink href={links.dailyText(cur)}>Abrir</ExternalLink>
           {s.alexa && (
             <button type="button" className="btn" onClick={() => nav.sheet({ type: 'alexa', ctx: { kind: 'dt' } })}>
