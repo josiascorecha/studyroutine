@@ -12,6 +12,7 @@
 ## Bibliotecas
 
 - **pdf.js** (`pdfjs-dist`) — © Mozilla Foundation. Apache License 2.0. Desenha a página do texto diário a partir do PDF oficial.
+- **@capacitor-community/text-to-speech** — © Capacitor Community. MIT License. Lê o texto diário com a voz do aparelho.
 
 Dependências de código aberto listadas em `app/package.json` e `server/package.json` (React, Capacitor, Fastify, Zod, node-postgres e outras), cada uma sob a própria licença (MIT, Apache-2.0 ou similar). Para gerar a lista completa:
 

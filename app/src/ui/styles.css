@@ -791,6 +791,20 @@ textarea.input {
   display: none;
 }
 
+.dt-voice {
+  align-items: center;
+}
+
+.dt-rate {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dt-rate .input {
+  width: auto;
+}
+
 .dt-import {
   display: flex;
   flex-direction: column;

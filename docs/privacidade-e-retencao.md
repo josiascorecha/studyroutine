@@ -25,7 +25,7 @@ Rascunho técnico para apoiar a política de privacidade (página `/privacidade`
 
 Sem cadastro, e-mail, telefone ou senha; sem anúncios; sem ferramentas de análise ou rastreamento; sem SDKs de terceiros; sem localização; sem acesso a contatos ou arquivos.
 
-Conexões que saem do aparelho: servidor do StudyRoutine (só com sincronização ligada, e para o catálogo), serviço de metadados e CDN do jw.org (ao preparar ou tocar áudio e ao baixar o PDF do texto diário) e os links abertos pela pessoa.
+Conexões que saem do aparelho: servidor do StudyRoutine (só com sincronização ligada, e para o catálogo), serviço de metadados e CDN do jw.org (ao preparar ou tocar áudio e ao baixar o PDF do texto diário) e os links abertos pela pessoa. O botão "Ouvir" do texto diário usa a voz do aparelho; no navegador o app prefere uma voz local, mas algumas vozes do Chrome no computador funcionam pela rede do Google (o texto falado é o do livro, nada da pessoa).
 
 ## Direitos e exclusão
 

@@ -368,3 +368,32 @@ test('app instalado pelo navegador avisa quando há versão nova', async ({ page
   await expect(page.getByText('Há uma versão nova do app.')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Atualizar' })).toBeVisible();
 });
+
+test('texto diário: ouvir com a voz do aparelho', async ({ page }) => {
+  // Voz simulada: guarda o que seria falado e termina na hora.
+  await page.addInitScript(() => {
+    const said: string[] = [];
+    (window as unknown as { __said: string[] }).__said = said;
+    Object.defineProperty(window, 'speechSynthesis', {
+      value: {
+        speak(u: SpeechSynthesisUtterance) {
+          said.push(`${u.lang}|${u.rate}|${u.text}`);
+          setTimeout(() => u.onend?.(new Event('end') as SpeechSynthesisEvent), 30);
+        },
+        cancel() {},
+        getVoices: () => [],
+      },
+    });
+  });
+  await onboard(page);
+  await page.getByRole('region', { name: 'Texto diário' }).getByRole('button', { name: 'Ler aqui' }).click();
+  const sheet = page.getByRole('dialog', { name: 'Texto diário' });
+  await expect(sheet.getByRole('img', { name: /Texto diário de sexta-feira, 2 de outubro/ }).first()).toBeVisible({ timeout: 30_000 });
+  await sheet.getByLabel('Velocidade').selectOption('0.8');
+  await sheet.getByRole('button', { name: 'Ouvir' }).click();
+  await expect(sheet.getByRole('button', { name: 'Ouvir' })).toBeVisible();
+  const said = await page.evaluate(() => (window as unknown as { __said: string[] }).__said.join(' '));
+  expect(said).toMatch(/^pt-BR\|0\.8\d*\|Sexta-feira, 2 de outubro\. Linha 1 do dia 2\/10, teste\./);
+  expect(said).toContain('Linha 14 do dia 2/10');
+  expect(said).not.toContain('do dia 3/10');
+});

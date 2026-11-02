@@ -1,6 +1,7 @@
 import type { Repo } from '../data/repo';
 import { fetchJson } from '../audio/official';
-import { buildDailyTextIndex, segmentsFor, type DailyTextIndex, type PdfPageText, type PdfSegment } from '../domain/dailyTextPdf';
+import { buildDailyTextIndex, segmentsFor, type DailyTextIndex, type PdfPageText, type PdfSegment, type PdfTextItem } from '../domain/dailyTextPdf';
+import { dailyTextForSpeech } from '../domain/dailyTextSpeech';
 import type { DayKey } from '../domain/dates';
 import { CapacitorHttp } from '@capacitor/core';
 import { isNative } from '../app/platform';
@@ -78,16 +79,21 @@ async function openDoc(bytes: ArrayBuffer): Promise<PdfDoc> {
   return lib.getDocument({ data: new Uint8Array(bytes.slice(0)), isEvalSupported: false, disableFontFace: true }).promise;
 }
 
+type PdfPage = Awaited<ReturnType<PdfDoc['getPage']>>;
+
+async function itemsOf(page: PdfPage): Promise<PdfTextItem[]> {
+  const tc = await page.getTextContent();
+  return (tc.items as { str?: string; transform?: number[]; width?: number; height?: number }[])
+    .filter((i) => typeof i.str === 'string' && i.transform)
+    .map((i) => ({ str: i.str!, x: i.transform![4], y: i.transform![5], w: i.width ?? 0, h: i.height ?? 0 }));
+}
+
 async function pagesText(doc: PdfDoc): Promise<PdfPageText[]> {
   const out: PdfPageText[] = [];
   for (let n = 1; n <= doc.numPages; n++) {
     const page = await doc.getPage(n);
     const vp = page.getViewport({ scale: 1 });
-    const tc = await page.getTextContent();
-    const items = (tc.items as { str?: string; transform?: number[]; width?: number; height?: number }[])
-      .filter((i) => typeof i.str === 'string' && i.transform)
-      .map((i) => ({ str: i.str!, x: i.transform![4], y: i.transform![5], w: i.width ?? 0, h: i.height ?? 0 }));
-    out.push({ width: vp.width, height: vp.height, items });
+    out.push({ width: vp.width, height: vp.height, items: await itemsOf(page) });
     page.cleanup();
   }
   return out;
@@ -199,6 +205,19 @@ export class EsBook {
 
   segments(day: DayKey): PdfSegment[] | null {
     return this.index ? segmentsFor(this.index, day) : null;
+  }
+
+  /** Texto do dia para a voz do aparelho, montado na hora a partir do PDF (não é guardado). */
+  async speechText(day: DayKey): Promise<string> {
+    const segs = this.segments(day);
+    if (!this.doc || !segs?.length) return '';
+    const parts: { segment: PdfSegment; items: PdfTextItem[] }[] = [];
+    for (const segment of segs) {
+      const page = await this.doc.getPage(segment.page);
+      parts.push({ segment, items: await itemsOf(page) });
+      page.cleanup();
+    }
+    return dailyTextForSpeech(parts);
   }
 
   /** Desenha os pedaços do dia, um canvas por pedaço, na largura pedida (px CSS). */
