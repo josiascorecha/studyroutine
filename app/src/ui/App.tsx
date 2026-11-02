@@ -1,5 +1,6 @@
 import { App as CapApp } from '@capacitor/app';
 import { useCallback, useEffect, useState } from 'react';
+import { useNewVersion } from '../app/update';
 import { actions } from '../app/actions';
 import { useAudioVersion, usePlayer, useRepoVersion, useServices } from '../app/context';
 import { deriveDay, type DayView } from '../app/derive';
@@ -82,6 +83,7 @@ function MainApp() {
   const [meetTab, setMeetTab] = useState<MeetTab>('fim');
   const [sheet, setSheet] = useState<SheetState>(null);
   const [notice, setNotice] = useState('');
+  const newVersion = useNewVersion();
 
   useEffect(() => applyTheme(view.s.theme, view.s.simple), [view.s.theme, view.s.simple]);
 
@@ -121,6 +123,14 @@ function MainApp() {
         <button type="button" className="settings-btn" aria-label="Ajustes" aria-current={tab === 'ajustes' ? 'page' : undefined} onClick={() => nav.go('ajustes')}>
           <Icon name="ajustes" />
         </button>
+        {newVersion && (
+          <div className="note update-note" role="status" style={{ marginBottom: 12, marginRight: 52 }}>
+            <span>Há uma versão nova do app.</span>
+            <button type="button" className="btn primary" onClick={() => location.reload()}>
+              Atualizar
+            </button>
+          </div>
+        )}
         {notice && (
           <div className="note" role="status" style={{ marginBottom: 12, marginRight: 52 }}>
             {notice}

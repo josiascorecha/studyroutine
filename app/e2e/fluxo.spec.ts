@@ -354,3 +354,17 @@ test('texto diário na web: CDN recusa, a pessoa escolhe o PDF baixado do jw.org
   await page.getByRole('region', { name: 'Texto diário' }).getByRole('button', { name: 'Ler aqui' }).click();
   await expect(page.getByRole('img', { name: /Texto diário de sábado, 3 de outubro/ }).first()).toBeVisible({ timeout: 30_000 });
 });
+
+test('app instalado pelo navegador avisa quando há versão nova', async ({ page }) => {
+  await onboard(page);
+  await expect(page.getByText('Há uma versão nova do app.')).toBeHidden();
+  // O servidor passa a responder com outro script principal (nova publicação).
+  await page.route(/\/$/, (route) =>
+    route.request().resourceType() === 'fetch'
+      ? route.fulfill({ contentType: 'text/html', body: '<script type="module" src="/assets/index-Nova123.js"></script>' })
+      : route.continue(),
+  );
+  await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')));
+  await expect(page.getByText('Há uma versão nova do app.')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Atualizar' })).toBeVisible();
+});

@@ -340,6 +340,14 @@ h2,
   font-size: calc(13.5px * var(--scale));
 }
 
+.update-note {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .note.warn {
   background: var(--warn-soft);
   color: var(--warn);
