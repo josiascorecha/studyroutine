@@ -1,6 +1,7 @@
 import { App as CapApp } from '@capacitor/app';
 import { useCallback, useEffect, useState } from 'react';
 import { useNewVersion } from '../app/update';
+import { RATES } from '../audio/player';
 import { onReminderTap, scheduleReminders } from '../notify/reminders';
 import { actions } from '../app/actions';
 import { useAudioVersion, usePlayer, useRepoVersion, useServices } from '../app/context';
@@ -104,6 +105,11 @@ function MainApp() {
     return () => clearTimeout(id);
   }, [notice]);
 
+  // Velocidade do áudio escolhida neste aparelho.
+  useEffect(() => {
+    void svc.repo.getMeta<number>('audioRate').then((r) => r && svc.player.setRate(r));
+  }, [svc]);
+
   // Lembretes do Android: reagenda quando os ajustes mudam (aqui ou vindos de outro aparelho).
   const rs = view.s;
   const remindKey = JSON.stringify([rs.onboarded, rs.reminders, rs.remind, rs.dtTime, rs.readTime, rs.studyDays, rs.studyTime, rs.familyDay, rs.familyTime, rs.midDay, rs.wkDay, rs.midPrep, rs.wkPrep]);
@@ -196,9 +202,15 @@ function MainApp() {
 }
 
 function PlayerBar({ view, onMark }: { view: DayView; onMark: () => void }) {
-  const { player, audio } = useServices();
+  const { player, audio, repo } = useServices();
   const st = usePlayer();
   if (!st) return null;
+  const nextRate = () => {
+    const i = RATES.indexOf(st.rate);
+    const r = RATES[(i + 1) % RATES.length] ?? 1;
+    player.setRate(r);
+    void repo.setMeta('audioRate', r);
+  };
   let where = '';
   const w = view.week;
   if (w && st.title.startsWith('Leitura')) {
@@ -241,6 +253,9 @@ function PlayerBar({ view, onMark }: { view: DayView; onMark: () => void }) {
         <button type="button" className="btn ghost" aria-label="Avançar 30 segundos" onClick={() => player.forward(30)}>
           +30 s
         </button>
+        <button type="button" className="btn ghost" aria-label={`Velocidade ${fmtRate(st.rate)}. Tocar para mudar`} onClick={nextRate}>
+          {fmtRate(st.rate)}
+        </button>
       </div>
       <Progress value={st.total ? (st.pos * 100) / st.total : 0} />
       {st.error && <span className="small">{st.error}</span>}
@@ -252,6 +267,11 @@ function PlayerBar({ view, onMark }: { view: DayView; onMark: () => void }) {
       <span className="small">Áudio oficial do jw.org.</span>
     </div>
   );
+}
+
+/** "1×", "1,25×" */
+function fmtRate(r: number): string {
+  return `${String(r).replace('.', ',')}×`;
 }
 
 function getChapter(view: DayView, segment: number): number {

@@ -7,6 +7,8 @@ function fakeAudio() {
     src: '',
     currentTime: 0,
     paused: true,
+    playbackRate: 1,
+    defaultPlaybackRate: 1,
     preload: '',
     addEventListener() {},
     play() {
@@ -62,5 +64,21 @@ describe('tocador por trechos', () => {
     p.forward(10_000);
     expect(p.state!.done).toBe(true);
     expect(p.state!.pos).toBe(420);
+  });
+
+  it('velocidade vale para o capítulo seguinte também', async () => {
+    const audio = fakeAudio();
+    const p = new SegmentPlayer(audio as unknown as HTMLAudioElement);
+    p.setRate(1.5);
+    await p.play('Leitura de hoje', segs);
+    expect(audio.playbackRate).toBe(1.5);
+    expect(p.state!.rate).toBe(1.5);
+    audio.playbackRate = 1; // o navegador volta ao padrão ao trocar de arquivo
+    p.skip(310);
+    await Promise.resolve();
+    expect(audio.src).toBe(segs[1].url);
+    expect(audio.playbackRate).toBe(1.5);
+    p.setRate(9);
+    expect(p.getRate()).toBe(1.5);
   });
 });

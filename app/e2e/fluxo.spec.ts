@@ -170,6 +170,8 @@ test('configuração inicial, leitura até a reunião, preparo e ministério', a
   await expect(skip.getByRole('button', { name: 'Avançar 10 segundos' })).toBeVisible();
   await skip.getByRole('button', { name: 'Avançar 30 segundos' }).click();
   await expect(player.getByText(/0:3\d \//)).toBeVisible();
+  await skip.getByRole('button', { name: /Velocidade 1×/ }).click();
+  await expect(skip.getByRole('button', { name: /Velocidade 1,25×/ })).toBeVisible();
   await player.getByRole('button', { name: 'Fechar o áudio' }).click();
 
   // Dois dias depois, sem ler no sábado: o app redistribui o restante.

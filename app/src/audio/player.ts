@@ -11,7 +11,11 @@ export interface PlayerState {
   fileTime: number;
   done: boolean;
   error: string | null;
+  /** Velocidade (1 = normal). */
+  rate: number;
 }
+
+export const RATES = [0.75, 1, 1.25, 1.5, 1.75, 2];
 
 /**
  * Toca trechos de arquivos MP3 oficiais em sequência (ex.: Jer 40:15 até 41:5 = dois arquivos).
@@ -21,6 +25,7 @@ export class SegmentPlayer {
   private audio: HTMLAudioElement;
   private segs: AudioSegment[] = [];
   private idx = 0;
+  private rate = 1;
   private listeners = new Set<(s: PlayerState) => void>();
   state: PlayerState | null = null;
 
@@ -51,7 +56,7 @@ export class SegmentPlayer {
     this.segs = segs;
     this.idx = 0;
     const total = segs.reduce((a, s) => a + (s.end - s.start), 0);
-    this.state = { title, playing: false, pos: 0, total, segment: 0, fileTime: segs[0]?.start ?? 0, done: false, error: null };
+    this.state = { title, playing: false, pos: 0, total, segment: 0, fileTime: segs[0]?.start ?? 0, done: false, error: null, rate: this.rate };
     await this.load(0);
   }
 
@@ -60,6 +65,9 @@ export class SegmentPlayer {
     if (!s) return this.finish();
     this.idx = i;
     if (this.audio.src !== s.url) this.audio.src = s.url;
+    // Trocar de arquivo volta a velocidade ao padrão do elemento; reaplica.
+    this.audio.defaultPlaybackRate = this.rate;
+    this.audio.playbackRate = this.rate;
     this.audio.currentTime = at ?? s.start;
     if (!autoplay) {
       this.emit({ segment: i, fileTime: this.audio.currentTime, pos: this.elapsedBefore(i) + (this.audio.currentTime - s.start) });
@@ -134,6 +142,19 @@ export class SegmentPlayer {
       this.emit({ pos: target, fileTime: at, segment: i });
       void this.load(i, at, wasPlaying);
     }
+  }
+
+  /** Velocidade de reprodução; vale também para os próximos áudios. */
+  setRate(rate: number) {
+    if (!Number.isFinite(rate) || rate < 0.5 || rate > 3) return;
+    this.rate = rate;
+    this.audio.defaultPlaybackRate = rate;
+    this.audio.playbackRate = rate;
+    this.emit({ rate });
+  }
+
+  getRate(): number {
+    return this.rate;
   }
 
   back(seconds = 10) {
