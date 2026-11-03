@@ -63,3 +63,21 @@ describe('adoração em família', () => {
     expect(nextOnWeekday('2026-10-04', 6)).toBe('2026-10-10'); // sábado seguinte
   });
 });
+
+import { pickLatestProgram } from '../src/app/broadcasting';
+
+describe('JW Broadcasting', () => {
+  it('pega o programa mensal mais recente, com chave válida', () => {
+    const data = {
+      category: {
+        media: [
+          { title: 'Outubro', languageAgnosticNaturalKey: 'pub-jwb-142_1_VIDEO', firstPublished: '2026-10-05T18:07:06Z' },
+          { title: 'Novembro', languageAgnosticNaturalKey: 'pub-jwb-143_1_VIDEO', firstPublished: '2026-11-02T16:24:21Z' },
+          { title: 'Estranho', languageAgnosticNaturalKey: 'x/../y', firstPublished: '2026-12-01T00:00:00Z' },
+        ],
+      },
+    };
+    expect(pickLatestProgram(data)).toEqual({ title: 'Novembro', lank: 'pub-jwb-143_1_VIDEO', published: '2026-11-02T16:24:21Z' });
+    expect(pickLatestProgram({})).toBeNull();
+  });
+});

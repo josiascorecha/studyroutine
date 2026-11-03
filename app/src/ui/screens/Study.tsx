@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { allThemes, themeLabel, TIPO_LABELS, useCatalog, type CatalogItem } from '../../app/catalog';
 import { useRepoVersion, useServices } from '../../app/context';
 import type { DayView } from '../../app/derive';
-import { FAMILY_FORMATS, familyLog, newId, saveSettings, savedLinks, T, type FamilyWorship, type SavedLink } from '../../app/model';
+import { latestProgram, type MonthlyProgram } from '../../app/broadcasting';
+import { FAMILY_BROADCASTING, FAMILY_FORMATS, familyLog, newId, saveSettings, savedLinks, T, type FamilyWorship, type SavedLink } from '../../app/model';
 import { openExternal } from '../../app/platform';
 import { addDays, dayWordDm, shortDay, weekday, type DayKey } from '../../domain/dates';
 import { isOfficialUrl, links } from '../../domain/links';
@@ -62,8 +63,20 @@ export function Study({ view, nav }: { view: DayView; nav: Nav }) {
   const toggleTheme = (t: string) => save({ themes: s.themes.includes(t) ? s.themes.filter((x) => x !== t) : [...s.themes, t] });
 
   // Adoração em família: sugere o formato seguinte ao último usado, para variar.
+  // Programa novo da JW Broadcasting que a família ainda não assistiu: vira a primeira ideia.
+  const [program, setProgram] = useState<MonthlyProgram | null>(null);
+  useEffect(() => {
+    let alive = true;
+    void latestProgram(repo).then((p) => alive && setProgram(p));
+    return () => {
+      alive = false;
+    };
+  }, [repo]);
+  const programDay = program?.published.slice(0, 10) ?? '';
+  const watched = !!program && log.some((x) => x.data.format === FAMILY_BROADCASTING && x.data.date >= programDay);
   const lastFormat = log[0]?.data.format;
-  const baseIndex = lastFormat ? (FAMILY_FORMATS.indexOf(lastFormat) + 1) % FAMILY_FORMATS.length : 0;
+  const baseIndex =
+    program && !watched ? FAMILY_FORMATS.indexOf(FAMILY_BROADCASTING) : lastFormat ? (FAMILY_FORMATS.indexOf(lastFormat) + 1) % FAMILY_FORMATS.length : 0;
   const suggestion = FAMILY_FORMATS[(baseIndex + shift) % FAMILY_FORMATS.length];
   const doneToday = log.find((x) => x.data.date === cur);
   const nextFamily = s.familyDay === null ? null : nextOnWeekday(cur, s.familyDay);
@@ -132,6 +145,14 @@ export function Study({ view, nav }: { view: DayView; nav: Nav }) {
         <div className="box">
           <div className="small">Ideia para esta semana</div>
           <div className="row-title">{suggestion}</div>
+          {suggestion === FAMILY_BROADCASTING && (
+            <>
+              <div className="small">{program ? `${program.title}. Abre no JW Library, se estiver instalado.` : 'Abre a lista de programas mensais no jw.org.'}</div>
+              <ExternalLink href={program ? links.video(program.lank) : links.monthlyPrograms()} className="btn primary">
+                {program ? 'Assistir ao programa do mês' : 'Ver programas mensais'}
+              </ExternalLink>
+            </>
+          )}
           <div className="row-btns">
             <button type="button" className="btn ghost" onClick={() => setShift(shift + 1)}>
               Outra ideia

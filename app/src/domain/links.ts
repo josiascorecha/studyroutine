@@ -22,6 +22,10 @@ export const links = {
   wolChapter: (book: number, chapter: number) => `${WOL}/b/${WOL_LIB}/nwtsty/${book}/${chapter}`,
   /** Abre o artigo direto no parágrafo (no Android, no JW Library quando instalado). */
   paragraph: (docid: number | string, par: number) => `https://www.jw.org/finder?wtlocale=${LOCALE}&docid=${docid}&par=${par}`,
+  /** Link de compartilhamento do vídeo: no Android abre no JW Library, se estiver instalado. */
+  video: (lank: string) => `https://www.jw.org/finder?srcid=jwlshare&wtlocale=${LOCALE}&lank=${encodeURIComponent(lank)}`,
+  /** Lista dos programas mensais da JW Broadcasting. */
+  monthlyPrograms: () => 'https://www.jw.org/pt/biblioteca/videos/#pt/categories/StudioMonthlyPrograms',
   wolDoc: (docid: number | string) => `${WOL}/d/${WOL_LIB}/${docid}`,
   wolSearch: (q: string) => `${WOL}/s/${WOL_LIB}?q=${encodeURIComponent(q)}`,
   publication: (symbol: string) => `${WOL}/publication/${WOL_LIB}/${symbol}`,

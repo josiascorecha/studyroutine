@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRepoVersion, useServices } from '../../app/context';
 import type { DayView } from '../../app/derive';
 import { newId, sessions, SERVICE_KINDS, students, T } from '../../app/model';
-import { cap, fmtMinutes, monthLabel, pad, shortDay } from '../../domain/dates';
+import { addDays, cap, fmtMinutes, monthLabel, pad, shortDay, type DayKey } from '../../domain/dates';
 import { links } from '../../domain/links';
 import { isPartEnd, LFF_LESSONS, lffPart, monthSessions, pioneerPace, reportText, type FieldSession, type Student } from '../../domain/ministry';
 import { alexa } from '../../domain/alexa';
@@ -19,7 +19,9 @@ export function Ministry({ view, nav }: { view: DayView; nav: Nav }) {
   const studs = students(repo);
   const pace = pioneerPace(s.mode, s.meta, all, cur);
   const [kind, setKind] = useState(SERVICE_KINDS[0]);
-  const [manual, setManual] = useState('');
+  const [manualH, setManualH] = useState('');
+  const [manualM, setManualM] = useState('');
+  const [entryDay, setEntryDay] = useState<DayKey>(cur);
   const [name, setName] = useState('');
   const [lesson, setLesson] = useState('1');
   const [copied, setCopied] = useState('');
@@ -35,7 +37,22 @@ export function Ministry({ view, nav }: { view: DayView; nav: Nav }) {
     return () => clearInterval(id);
   }, [timerStart]);
 
-  const addSession = (min: number) => repo.put<FieldSession>(T.session, newId(), { date: cur, min, kind });
+  const addSession = (min: number, date: DayKey = cur) => repo.put<FieldSession>(T.session, newId(), { date, min, kind });
+  // Lançamento de outro dia (esqueceu de cronometrar): até um ano para trás, nunca no futuro.
+  const minDay = addDays(cur, -366);
+  const day = entryDay > cur || entryDay < minDay ? cur : entryDay;
+  const otherMonth = day.slice(0, 7) !== cur.slice(0, 7);
+  const addManual = async () => {
+    const h = parseInt(manualH || '0', 10);
+    const m = parseInt(manualM || '0', 10);
+    const total = (Number.isFinite(h) ? Math.max(0, h) : 0) * 60 + (Number.isFinite(m) ? Math.max(0, m) : 0);
+    if (total <= 0) return nav.notify('Informe as horas, os minutos ou os dois.');
+    if (total > 24 * 60) return nav.notify('Um dia tem no máximo 24 horas.');
+    await addSession(total, day);
+    setManualH('');
+    setManualM('');
+    nav.notify(`${fmtMinutes(total)} lançados em ${shortDay(day)}${otherMonth ? ' (conta no mês daquela data)' : ''}.`);
+  };
   const elapsed = timerStart ? Math.max(0, Math.floor((now - timerStart) / 1000)) : 0;
   const timerText = `${Math.floor(elapsed / 3600)}:${pad(Math.floor((elapsed % 3600) / 60), 2)}:${pad(elapsed % 60, 2)}`;
   const toggleTimer = async () => {
@@ -103,37 +120,47 @@ export function Ministry({ view, nav }: { view: DayView; nav: Nav }) {
       <section className="card" aria-label="Registrar saída">
         <h2>Registrar saída</h2>
         <Chips label="Modalidade" options={SERVICE_KINDS.map((k) => ({ v: k, label: k }))} value={kind} onChange={setKind} />
+        <label className="field">
+          Data
+          <input className="input" type="date" value={day} min={minDay} max={cur} onChange={(e) => setEntryDay((e.target.value as DayKey) || cur)} />
+        </label>
+        {day !== cur && <div className="small">Lançando para {shortDay(day)}{otherMonth ? ', que conta no mês daquela data' : ''}.</div>}
         {isPub ? (
-          <button type="button" className="btn primary" onClick={() => void addSession(0)}>
-            Registrar saída de hoje
+          <button
+            type="button"
+            className="btn primary"
+            onClick={() =>
+              void addSession(0, day).then(() => {
+                if (day !== cur) nav.notify(`Saída registrada em ${shortDay(day)}.`);
+              })
+            }
+          >
+            {day === cur ? 'Registrar saída de hoje' : `Registrar saída de ${shortDay(day)}`}
           </button>
         ) : (
           <>
-            <div className="timer">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <span className="small">Cronômetro</span>
-                <span className="timer-value">{timerText}</span>
+            {day === cur && (
+              <div className="timer">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <span className="small">Cronômetro</span>
+                  <span className="timer-value">{timerText}</span>
+                </div>
+                <button type="button" className={timerStart ? 'btn done' : 'btn primary'} onClick={() => void toggleTimer()}>
+                  {timerStart ? 'Encerrar' : 'Iniciar'}
+                </button>
               </div>
-              <button type="button" className={timerStart ? 'btn done' : 'btn primary'} onClick={() => void toggleTimer()}>
-                {timerStart ? 'Encerrar' : 'Iniciar'}
-              </button>
-            </div>
+            )}
+            <span className="field-title">{day === cur ? 'Ou lance o tempo' : 'Tempo no campo'}</span>
             <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
               <label className="field" style={{ flex: 1 }}>
-                Ou lance os minutos
-                <input className="input" type="number" inputMode="numeric" min={1} placeholder="Ex.: 90" value={manual} onChange={(e) => setManual(e.target.value)} />
+                Horas
+                <input className="input" type="number" inputMode="numeric" min={0} max={24} placeholder="Ex.: 2" value={manualH} onChange={(e) => setManualH(e.target.value)} />
               </label>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => {
-                  const m = parseInt(manual, 10);
-                  if (m > 0) {
-                    void addSession(m);
-                    setManual('');
-                  }
-                }}
-              >
+              <label className="field" style={{ flex: 1 }}>
+                Minutos
+                <input className="input" type="number" inputMode="numeric" min={0} max={59} placeholder="Ex.: 30" value={manualM} onChange={(e) => setManualM(e.target.value)} />
+              </label>
+              <button type="button" className="btn" onClick={() => void addManual()}>
                 Adicionar
               </button>
             </div>

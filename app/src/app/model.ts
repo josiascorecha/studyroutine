@@ -237,7 +237,11 @@ export const FAMILY_FORMATS = [
   'Assistir a um vídeo do jw.org e conversar',
   'Treinar uma apresentação para o ministério',
   'Observar a criação e conversar sobre ela',
+  'Assistir ao programa mensal da JW Broadcasting e conversar',
 ];
+
+/** A ideia da adoração em família que tem botão para o programa do mês. */
+export const FAMILY_BROADCASTING = 'Assistir ao programa mensal da JW Broadcasting e conversar';
 
 /** Link do jw.org salvo pela pessoa, com título e tema próprios. */
 export interface SavedLink {

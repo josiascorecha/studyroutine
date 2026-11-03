@@ -62,6 +62,10 @@ O livro do ano "Examine as Escrituras Diariamente" tem PDF no serviço de downlo
 - No navegador o CDN não permite que outro site baixe o arquivo (CORS). A versão web tenta e, se o navegador recusar, pede que a pessoa baixe o PDF no jw.org (link direto para o arquivo oficial, ou a página do livro em `jw.org/finder?wtlocale=T&pub=es26`) e escolha o arquivo baixado. O app confere que é o livro do ano (os 365/366 títulos, em ordem) antes de guardar no navegador; arquivo errado não fica guardado. Nada passa pelo servidor do StudyRoutine: repassar o PDF pela VPS foi descartado, porque o servidor passaria a distribuir conteúdo do jw.org.
 - Se o PDF de um ano tiver outra diagramação e o índice não achar os 365 (ou 366) dias em ordem, com o dia da semana certo, o app não mostra nada recortado e oferece "Abrir no jw.org".
 
+## Programa mensal da JW Broadcasting
+
+A ideia "Assistir ao programa mensal da JW Broadcasting e conversar", na adoração em família, descobre o programa mais recente no serviço de vídeos que a Biblioteca de Vídeos do jw.org usa (`b.jw-cdn.org/apis/mediator/v1/categories/T/StudioMonthlyPrograms`, só título, chave e data; cache de 12 horas) e abre o link de compartilhamento oficial `jw.org/finder?srcid=jwlshare&wtlocale=T&lank=…`, que no Android abre no JW Library quando ele está instalado. O vídeo nunca passa pelo app. Sem rede, abre a lista de programas mensais no jw.org. Quando sai um programa novo que a família ainda não registrou como assistido, ele vira a primeira ideia.
+
 ## Parágrafo no JW Library
 
 `https://www.jw.org/finder?wtlocale=T&docid=DOCID&par=N` abre o artigo no parágrafo N (conferido em 15/10/2026: redireciona para `…#pN`). No Android, o sistema oferece o JW Library quando ele está instalado. O app copia o comentário preparado e abre o parágrafo; a pessoa cola na nota.

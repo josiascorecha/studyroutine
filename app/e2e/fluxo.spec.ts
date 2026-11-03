@@ -44,6 +44,19 @@ const ES_PDF = 'https://cfp2.jw-cdn.org/a/teste/1/o/es26_T.pdf';
 async function mockOfficial(page: Page, opts: { workbook?: boolean; esCors?: boolean } = {}) {
   await page.route('https://b.jw-cdn.org/**', (route) => {
     const u = new URL(route.request().url());
+    if (u.pathname.includes('/mediator/v1/categories/T/StudioMonthlyPrograms')) {
+      return route.fulfill({
+        json: {
+          category: {
+            key: 'StudioMonthlyPrograms',
+            media: [
+              { title: 'Programa de teste — Setembro', languageAgnosticNaturalKey: 'pub-jwb-teste-9_1_VIDEO', firstPublished: '2026-09-07T13:00:00Z' },
+              { title: 'Programa de teste — Outubro', languageAgnosticNaturalKey: 'pub-jwb-teste-10_1_VIDEO', firstPublished: '2026-10-01T13:00:00Z' },
+            ],
+          },
+        },
+      });
+    }
     const pub = u.searchParams.get('pub');
     if (pub === 'es26') {
       return route.fulfill({ json: { files: { T: { PDF: [{ title: 'Livro de teste', file: { url: ES_PDF, checksum: 'x' }, filesize: 139431 }] } } } });
@@ -435,4 +448,43 @@ test('estudo pessoal e adoração em família com dias e horários; lembretes aj
   await page.reload();
   await page.getByRole('button', { name: 'Ajustes', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Lembretes' }).getByRole('button', { name: '2 dias antes (seg)' })).toHaveAttribute('aria-pressed', 'true');
+});
+
+test('adoração em família sugere o programa mensal da JW Broadcasting', async ({ page }) => {
+  await onboard(page);
+  await page.getByRole('button', { name: 'Estudo', exact: true }).click();
+  const fam = page.getByRole('region', { name: 'Adoração em família' });
+  await expect(fam.getByText('Assistir ao programa mensal da JW Broadcasting e conversar')).toBeVisible();
+  await expect(fam.getByText('Programa de teste — Outubro. Abre no JW Library, se estiver instalado.')).toBeVisible();
+  await expect(fam.getByRole('link', { name: 'Assistir ao programa do mês' })).toHaveAttribute(
+    'href',
+    'https://www.jw.org/finder?srcid=jwlshare&wtlocale=T&lank=pub-jwb-teste-10_1_VIDEO',
+  );
+  // Depois de registrar que assistiram, a próxima ideia é outra.
+  await fam.getByRole('button', { name: 'Registrar adoração de hoje' }).click();
+  await expect(fam.getByRole('link', { name: 'Assistir ao programa do mês' })).toBeHidden();
+});
+
+test('ministério: lança horas e minutos em outro dia', async ({ page }) => {
+  await onboard(page);
+  await page.getByRole('button', { name: 'Ajustes', exact: true }).click();
+  await page.getByRole('button', { name: /Pioneiro auxiliar/ }).click();
+  await page.getByRole('button', { name: 'Ministério', exact: true }).click();
+  const reg = page.getByRole('region', { name: 'Registrar saída' });
+  await reg.getByLabel('Data').fill('2026-10-01');
+  await expect(reg.getByText('Lançando para qui, 1/10.')).toBeVisible();
+  await expect(reg.getByRole('button', { name: 'Iniciar' })).toBeHidden();
+  await reg.getByLabel('Horas').fill('1');
+  await reg.getByLabel('Minutos').fill('30');
+  await reg.getByRole('button', { name: 'Adicionar' }).click();
+  await expect(page.getByText('1h30 lançados em qui, 1/10.')).toBeVisible();
+  await expect(reg.locator('.day-row', { hasText: 'qui, 1/10' }).getByText('1h30')).toBeVisible();
+  // Do mês anterior também vale (conta no mês daquela data).
+  await reg.getByLabel('Data').fill('2026-09-29');
+  await reg.getByLabel('Horas').fill('2');
+  await reg.getByRole('button', { name: 'Adicionar' }).click();
+  await expect(page.getByText('2h lançados em ter, 29/9 (conta no mês daquela data).')).toBeVisible();
+  // Voltando para hoje, o cronômetro aparece de novo.
+  await reg.getByLabel('Data').fill('2026-10-02');
+  await expect(reg.getByRole('button', { name: 'Iniciar' })).toBeVisible();
 });
