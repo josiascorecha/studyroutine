@@ -8,6 +8,7 @@ import { monthSessions } from '../../domain/ministry';
 import { portionLabel, portionRefs, portionSeconds } from '../../domain/reading';
 import { ExternalLink, PageHead, PlayIcon, Progress } from '../components';
 import type { Nav } from '../App';
+import { InstallCard } from '../InstallCard';
 
 export function Today({ view, nav }: { view: DayView; nav: Nav }) {
   const svc = useServices();
@@ -70,6 +71,8 @@ export function Today({ view, nav }: { view: DayView; nav: Nav }) {
   return (
     <div className="stack">
       <PageHead eyebrow={longDay(cur)} title="Seu dia" sub={`Reuniões: ${meetings.map((m) => `${shortDay(m.d)} às ${fmtTime(m.t)}`).join(' · ')}`} />
+
+      <InstallCard />
 
       <section className="card" aria-label="Texto diário">
         <div className="card-head">

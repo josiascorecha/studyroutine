@@ -10,6 +10,7 @@ import { cap, DIAS, DIAS_CURTOS, fmtTime } from '../../domain/dates';
 import { scheduleReminders } from '../../notify/reminders';
 import { Chips, ExternalLink, PageHead, Segment, SwitchRow } from '../components';
 import { PairForm } from '../PairForm';
+import { InstallCard } from '../InstallCard';
 import { DEADLINES, MID_DAYS, MODES, THEMES, WK_DAYS, windowPreview } from './Onboarding';
 import type { Nav } from '../App';
 
@@ -165,6 +166,8 @@ export function Settings({ view, nav }: { view: DayView; nav: Nav }) {
           </div>
         )}
       </section>
+
+      {!isNative() && <InstallCard always />}
 
       <SyncCard nav={nav} />
 

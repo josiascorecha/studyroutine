@@ -495,3 +495,37 @@ test('ministério: lança horas e minutos em outro dia', async ({ page }) => {
   await reg.getByLabel('Data').fill('2026-10-02');
   await expect(reg.getByRole('button', { name: 'Iniciar' })).toBeVisible();
 });
+
+test('versão web convida a instalar o app (atalho na tela inicial)', async ({ page }) => {
+  await onboard(page);
+  const card = page.getByRole('region', { name: 'Instalar o app' });
+  // Sem o convite do navegador (e fora do iPhone), não aparece nada no Hoje.
+  await expect(card).toBeHidden();
+
+  const offer = (outcome: 'accepted' | 'dismissed') =>
+    page.evaluate((o) => {
+      const e = new Event('beforeinstallprompt', { cancelable: true }) as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+      (window as unknown as { __prompted: number }).__prompted = 0;
+      e.prompt = async () => {
+        (window as unknown as { __prompted: number }).__prompted++;
+      };
+      e.userChoice = Promise.resolve({ outcome: o });
+      window.dispatchEvent(e);
+    }, outcome);
+
+  await offer('dismissed');
+  await expect(card.getByText('Instale o StudyRoutine')).toBeVisible();
+  await card.getByRole('button', { name: 'Instalar' }).click();
+  expect(await page.evaluate(() => (window as unknown as { __prompted: number }).__prompted)).toBe(1);
+  // Recusou no pedido do navegador: some do Hoje por um tempo, mesmo com novo convite.
+  await expect(card).toBeHidden();
+  await page.waitForTimeout(200);
+  await page.reload();
+  await expect(page.getByRole('heading', { name: 'Seu dia' })).toBeVisible();
+  await offer('accepted');
+  await expect(card).toBeHidden();
+  // Em Ajustes continua disponível.
+  await page.getByRole('button', { name: 'Ajustes', exact: true }).click();
+  await card.getByRole('button', { name: 'Instalar' }).click();
+  await expect(card).toBeHidden(); // aceitou: já instalado
+});

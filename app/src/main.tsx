@@ -8,12 +8,15 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { AudioStore } from './app/audioStore';
 import { ServicesProvider, type Services } from './app/context';
+import { listenForInstall } from './app/install';
 import { getSettings } from './app/model';
 import { isNative } from './app/platform';
 import { SyncController } from './app/syncController';
 import { SegmentPlayer } from './audio/player';
 import { Repo } from './data/repo';
 import { App, applyTheme } from './ui/App';
+
+listenForInstall();
 
 async function start() {
   const root = createRoot(document.getElementById('root')!);
