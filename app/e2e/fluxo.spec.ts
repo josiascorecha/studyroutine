@@ -323,6 +323,11 @@ test('texto diário: mostra só o dia, recortado do PDF oficial guardado no apar
   const box = await sheet.locator('canvas.dt-page').first().boundingBox();
   expect(box!.width).toBeGreaterThan(200);
   expect(box!.height).toBeLessThan(box!.width * 2);
+  // A página inteira do dia aparece (rolando a tela), sem ser cortada pela caixa.
+  const pages = await sheet.locator('.dt-pages').boundingBox();
+  expect(Math.abs(pages!.height - box!.height)).toBeLessThan(2);
+  await sheet.getByRole('button', { name: 'Marcar como lido' }).scrollIntoViewIfNeeded();
+  await expect(sheet.getByRole('button', { name: 'Marcar como lido' })).toBeInViewport();
   await sheet.getByRole('button', { name: 'Marcar como lido' }).click();
   await expect(sheet).toBeHidden();
   await expect(page.getByRole('region', { name: 'Texto diário' }).getByText('Feito')).toBeVisible();

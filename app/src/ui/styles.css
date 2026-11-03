@@ -863,6 +863,12 @@ textarea.input {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overscroll-behavior: contain;
+}
+
+/* Sem isto, o conteúdo alto (a página do texto diário) encolhe e fica cortado em vez de rolar. */
+.sheet > * {
+  flex-shrink: 0;
 }
 
 .fav-card {
