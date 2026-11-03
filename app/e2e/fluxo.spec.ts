@@ -402,3 +402,37 @@ test('texto diário: ouvir com a voz do aparelho', async ({ page }) => {
   expect(said).toContain('Linha 14 do dia 2/10');
   expect(said).not.toContain('do dia 3/10');
 });
+
+test('estudo pessoal e adoração em família com dias e horários; lembretes ajustáveis', async ({ page }) => {
+  await onboard(page);
+  await page.getByRole('button', { name: 'Estudo', exact: true }).click();
+  const est = page.getByRole('region', { name: 'Estudo pessoal' });
+  const dias = est.getByRole('group', { name: 'Dias do estudo pessoal' });
+  await dias.getByRole('button', { name: 'Seg' }).click();
+  await dias.getByRole('button', { name: 'Sex' }).click();
+  await expect(dias.getByRole('button', { name: 'Sex' })).toHaveAttribute('aria-pressed', 'true');
+  await est.getByLabel('Horário').fill('21:15');
+  await expect(est.getByText('Hoje é dia de estudo pessoal.')).toBeVisible();
+
+  const fam = page.getByRole('region', { name: 'Adoração em família' });
+  await fam.getByRole('group', { name: 'Dia da adoração em família' }).getByRole('button', { name: 'Qui' }).click();
+  await fam.getByLabel('Horário').fill('20:00');
+
+  await page.getByRole('button', { name: 'Hoje', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Estudo pessoal' }).getByText('Hoje · 21h15')).toBeVisible();
+
+  await page.getByRole('button', { name: 'Ajustes', exact: true }).click();
+  const lem = page.getByRole('region', { name: 'Lembretes' });
+  await expect(lem.getByText('Segunda-feira e sexta-feira, às 21h15. Mude na aba Estudo.')).toBeVisible();
+  await expect(lem.getByText('Quinta-feira, às 20h. Mude na aba Estudo.')).toBeVisible();
+  const quando = lem.getByRole('group', { name: 'Quando lembrar da reunião de meio de semana' });
+  await expect(quando.getByRole('button', { name: 'Véspera (ter)' })).toHaveAttribute('aria-pressed', 'true');
+  await quando.getByRole('button', { name: '2 dias antes (seg)' }).click();
+  await expect(quando.getByRole('button', { name: '2 dias antes (seg)' })).toHaveAttribute('aria-pressed', 'true');
+
+  // Fica guardado (a gravação no aparelho é assíncrona).
+  await page.waitForTimeout(500);
+  await page.reload();
+  await page.getByRole('button', { name: 'Ajustes', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Lembretes' }).getByRole('button', { name: '2 dias antes (seg)' })).toHaveAttribute('aria-pressed', 'true');
+});

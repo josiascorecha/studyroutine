@@ -38,8 +38,26 @@ export interface AppSettings extends MeetingSettings {
   installDay: DayKey;
   /** Dia fixo da adoração em família (0 = domingo … 6 = sábado), ou null se não usa. */
   familyDay: number | null;
+  familyTime: string;
+  /** Dias do estudo pessoal (0 = domingo … 6 = sábado). */
+  studyDays: number[];
+  studyTime: string;
+  /** Lembrete de preparar cada reunião: quantos dias antes (1 = véspera) e a que horas. */
+  midPrep: { before: number; time: string };
+  wkPrep: { before: number; time: string };
+  /** Quais lembretes estão ligados (além da chave geral `reminders`). */
+  remind: Reminders;
   /** Temas de interesse escolhidos (filtram as sugestões do catálogo). */
   themes: string[];
+}
+
+export interface Reminders {
+  dt: boolean;
+  read: boolean;
+  study: boolean;
+  family: boolean;
+  mid: boolean;
+  wk: boolean;
 }
 
 export function defaultSettings(today: DayKey = localDayKey()): AppSettings {
@@ -62,13 +80,28 @@ export function defaultSettings(today: DayKey = localDayKey()): AppSettings {
     reminders: true,
     installDay: today,
     familyDay: null,
+    familyTime: '19:30',
+    studyDays: [],
+    studyTime: '19:00',
+    midPrep: { before: 1, time: '19:00' },
+    wkPrep: { before: 1, time: '19:00' },
+    remind: { dt: true, read: true, study: true, family: true, mid: true, wk: true },
     themes: [],
   };
 }
 
 export function getSettings(repo: Repo): AppSettings {
   const stored = repo.get<Partial<AppSettings>>(T.config, 'main') ?? {};
-  return { ...defaultSettings(), ...stored, exceptions: { ...(stored.exceptions ?? {}) } };
+  const d = defaultSettings();
+  return {
+    ...d,
+    ...stored,
+    exceptions: { ...(stored.exceptions ?? {}) },
+    remind: { ...d.remind, ...(stored.remind ?? {}) },
+    midPrep: { ...d.midPrep, ...(stored.midPrep ?? {}) },
+    wkPrep: { ...d.wkPrep, ...(stored.wkPrep ?? {}) },
+    studyDays: Array.isArray(stored.studyDays) ? stored.studyDays : d.studyDays,
+  };
 }
 
 export async function saveSettings(repo: Repo, patch: Partial<AppSettings>): Promise<void> {

@@ -37,7 +37,7 @@ Cada registro tem `type`, `key`, `data`, `hlc` (relógio lógico), `deleted` (l�
 
 | Tipo | Chave | Conteúdo |
 |---|---|---|
-| `config` | `main` | Ajustes: reuniões, prazo da leitura, modo de ministério, meta, tema, Alexa, lembretes, dia da adoração em família, temas de interesse |
+| `config` | `main` | Ajustes: reuniões, prazo da leitura, modo de ministério, meta, tema, Alexa, lembretes (quais e quando), dias e horário do estudo pessoal, dia e horário da adoração em família, temas de interesse |
 | `semana` | segunda-feira da semana da reunião | Livro, capítulos e lições do "Ame as Pessoas" treinadas, quando a pessoa cadastra ou ajusta (sem registro, vale o trecho da apostila oficial) |
 | `leitura` | `semana:data` | Evento "li do versículo X ao Y neste dia" e por qual meio (leitura, áudio, Alexa) |
 | `texto` | data | Texto diário feito, meio e anotação |
@@ -69,7 +69,7 @@ Esse serviço não é uma API documentada: se ele mudar ou falhar, o app continu
 
 ### Notificações (Android)
 
-Lembretes locais, sem servidor e sem push: texto diário, leitura e véspera das reuniões. Sem alarme exato (a permissão `SCHEDULE_EXACT_ALARM` é removida do manifesto), o Android entrega no horário aproximado.
+Lembretes locais, sem servidor e sem push, cada um podendo ser desligado em Ajustes: texto diário e leitura (todo dia, no horário escolhido), estudo pessoal (nos dias e no horário escolhidos na aba Estudo), adoração em família (no dia e horário dela) e preparo de cada reunião (véspera, 2 ou 3 dias antes, no horário escolhido). O plano de lembretes sai dos ajustes (`src/notify/plan.ts`, testado) e é reagendado sempre que os ajustes mudam, inclusive quando chegam de outro aparelho pela sincronização. Tocar na notificação abre a aba certa. Sem alarme exato (a permissão `SCHEDULE_EXACT_ALARM` é removida do manifesto), o Android entrega no horário aproximado. Na versão web instalada pelo navegador não há lembretes: agendar notificações ali exigiria push pelo servidor, que passaria a conhecer a rotina da pessoa.
 
 ### Links externos
 

@@ -1,6 +1,7 @@
 import { App as CapApp } from '@capacitor/app';
 import { useCallback, useEffect, useState } from 'react';
 import { useNewVersion } from '../app/update';
+import { onReminderTap, scheduleReminders } from '../notify/reminders';
 import { actions } from '../app/actions';
 import { useAudioVersion, usePlayer, useRepoVersion, useServices } from '../app/context';
 import { deriveDay, type DayView } from '../app/derive';
@@ -102,6 +103,22 @@ function MainApp() {
     const id = setTimeout(() => setNotice(''), 6000);
     return () => clearTimeout(id);
   }, [notice]);
+
+  // Lembretes do Android: reagenda quando os ajustes mudam (aqui ou vindos de outro aparelho).
+  const rs = view.s;
+  const remindKey = JSON.stringify([rs.onboarded, rs.reminders, rs.remind, rs.dtTime, rs.readTime, rs.studyDays, rs.studyTime, rs.familyDay, rs.familyTime, rs.midDay, rs.wkDay, rs.midPrep, rs.wkPrep]);
+  useEffect(() => {
+    if (rs.onboarded) void scheduleReminders(rs, false).catch(() => {});
+  }, [remindKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(
+    () =>
+      onReminderTap((t, m) => {
+        setSheet(null);
+        setTab(t);
+        if (m) setMeetTab(m);
+      }),
+    [],
+  );
 
   const nav: Nav = {
     go: useCallback((t: Tab, m?: MeetTab) => {

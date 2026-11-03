@@ -6,7 +6,9 @@ import { FAMILY_FORMATS, familyLog, newId, saveSettings, savedLinks, T, type Fam
 import { openExternal } from '../../app/platform';
 import { addDays, dayWordDm, shortDay, weekday, type DayKey } from '../../domain/dates';
 import { isOfficialUrl, links } from '../../domain/links';
-import { Chips, ExternalLink, PageHead } from '../components';
+import { Chips, ExternalLink, MultiChips, PageHead } from '../components';
+import { scheduleReminders } from '../../notify/reminders';
+import { isNative } from '../../app/platform';
 import type { Nav } from '../App';
 
 const DAY_OPTIONS = [
@@ -23,6 +25,11 @@ const DAY_OPTIONS = [
 export function nextOnWeekday(cur: DayKey, day: number): DayKey {
   const diff = (day - weekday(cur) + 7) % 7;
   return addDays(cur, diff);
+}
+
+/** Próximo dia (hoje inclusive) entre os dias da semana escolhidos. */
+export function nextOf(cur: DayKey, days: number[]): DayKey {
+  return days.map((d) => nextOnWeekday(cur, d)).sort()[0];
 }
 
 export function Study({ view, nav }: { view: DayView; nav: Nav }) {
@@ -43,7 +50,15 @@ export function Study({ view, nav }: { view: DayView; nav: Nav }) {
   const [newTheme, setNewTheme] = useState('estudo-pessoal');
   const [showAll, setShowAll] = useState(false);
 
-  const save = (patch: Parameters<typeof saveSettings>[1]) => void saveSettings(repo, patch);
+  const save = (patch: Parameters<typeof saveSettings>[1]) =>
+    void saveSettings(repo, patch).then(() => {
+      // Mexeu nos dias ou horários: agenda os lembretes (pede a permissão, se ainda não tiver).
+      if (['studyDays', 'studyTime', 'familyDay', 'familyTime'].some((k) => k in patch)) {
+        void scheduleReminders({ ...s, ...patch }).then((r) => {
+          if (r === 'denied') nav.notify('Os lembretes precisam de permissão de notificação nas configurações do Android.');
+        });
+      }
+    });
   const toggleTheme = (t: string) => save({ themes: s.themes.includes(t) ? s.themes.filter((x) => x !== t) : [...s.themes, t] });
 
   // Adoração em família: sugere o formato seguinte ao último usado, para variar.
@@ -71,6 +86,26 @@ export function Study({ view, nav }: { view: DayView; nav: Nav }) {
     <div className="stack">
       <PageHead eyebrow="Estudo pessoal e família" title="Estudo" />
 
+      <section className="card" aria-label="Estudo pessoal">
+        <h2>Estudo pessoal</h2>
+        <span className="field-title">Dias</span>
+        <MultiChips label="Dias do estudo pessoal" options={DAY_OPTIONS} values={s.studyDays} onChange={(v) => save({ studyDays: [...v].sort() })} />
+        {s.studyDays.length > 0 && (
+          <label className="field">
+            Horário
+            <input className="input" type="time" value={s.studyTime} onChange={(e) => save({ studyTime: e.target.value || '19:00' })} />
+          </label>
+        )}
+        <div className="muted">
+          {s.studyDays.length
+            ? s.studyDays.includes(weekday(cur))
+              ? 'Hoje é dia de estudo pessoal.'
+              : `Próximo: ${dayWordDm(nextOf(cur, s.studyDays))}.`
+            : 'Escolha os dias em que você separa um tempo para estudar.'}
+          {s.studyDays.length > 0 && (isNative() ? ' Você recebe um lembrete no horário.' : ' No app Android, você recebe um lembrete no horário.')}
+        </div>
+      </section>
+
       <section className="card" aria-label="Adoração em família">
         <div className="card-head">
           <h2>Adoração em família</h2>
@@ -83,6 +118,12 @@ export function Study({ view, nav }: { view: DayView; nav: Nav }) {
           value={s.familyDay ?? -1}
           onChange={(v) => save({ familyDay: v === s.familyDay ? null : v })}
         />
+        {s.familyDay !== null && (
+          <label className="field">
+            Horário
+            <input className="input" type="time" value={s.familyTime} onChange={(e) => save({ familyTime: e.target.value || '19:30' })} />
+          </label>
+        )}
         {nextFamily && (
           <div className="muted">
             {nextFamily === cur ? 'Hoje é o dia da adoração em família.' : `Próxima: ${dayWordDm(nextFamily)}.`}

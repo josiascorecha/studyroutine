@@ -6,18 +6,30 @@ import { canOpenAlexaApp, defaultServer, isNative, openAlexaApp } from '../../ap
 import { generateRecoveryKey } from '../../sync/crypto';
 import { SyncError } from '../../sync/engine';
 import { links } from '../../domain/links';
+import { cap, DIAS, DIAS_CURTOS, fmtTime } from '../../domain/dates';
 import { scheduleReminders } from '../../notify/reminders';
 import { Chips, ExternalLink, PageHead, Segment, SwitchRow } from '../components';
 import { PairForm } from '../PairForm';
 import { DEADLINES, MID_DAYS, MODES, THEMES, WK_DAYS, windowPreview } from './Onboarding';
 import type { Nav } from '../App';
 
+const REMINDER_KEYS: (keyof AppSettings)[] = ['reminders', 'remind', 'dtTime', 'readTime', 'midDay', 'wkDay', 'midPrep', 'wkPrep'];
+
+export const listDays = (days: number[]) => {
+  const names = [...days].sort().map((d) => DIAS[d]);
+  return cap(names.length > 1 ? `${names.slice(0, -1).join(', ')} e ${names[names.length - 1]}` : names[0]);
+};
+
+function prepOptions(meetingDay: number) {
+  return [1, 2, 3].map((b) => ({ v: b, label: `${b === 1 ? 'Véspera' : `${b} dias antes`} (${DIAS_CURTOS[(meetingDay - b + 7) % 7]})` }));
+}
+
 export function Settings({ view, nav }: { view: DayView; nav: Nav }) {
   const { repo } = useServices();
   const { s, cur } = view;
   const save = (patch: Partial<AppSettings>) => {
     void saveSettings(repo, patch).then(() => {
-      if ('reminders' in patch || 'dtTime' in patch || 'readTime' in patch || 'midDay' in patch || 'wkDay' in patch) {
+      if (REMINDER_KEYS.some((k) => k in patch)) {
         void scheduleReminders({ ...s, ...patch }).then((r) => {
           if (r === 'denied') nav.notify('Os lembretes precisam de permissão de notificação nas configurações do Android.');
         });
@@ -93,23 +105,65 @@ export function Settings({ view, nav }: { view: DayView; nav: Nav }) {
         </div>
       </section>
 
-      <section className="card">
+      <section className="card" aria-label="Lembretes">
         <h2>Lembretes</h2>
         {isNative() ? (
-          <SwitchRow title="Lembretes no celular" hint="Texto, leitura e véspera das reuniões." on={s.reminders} onChange={(v) => save({ reminders: v })} />
+          <SwitchRow title="Lembretes no celular" hint="Notificações do próprio aparelho, sem internet." on={s.reminders} onChange={(v) => save({ reminders: v })} />
         ) : (
-          <div className="small">Os lembretes funcionam no app Android. Na versão web, abra o app quando quiser.</div>
+          <div className="note">
+            As notificações funcionam no app Android. Aqui você pode deixar tudo ajustado: com a sincronização ligada, o celular recebe estes horários.
+          </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 8 }}>
-          <label className="field">
-            Texto diário
-            <input className="input" type="time" value={s.dtTime} onChange={(e) => save({ dtTime: e.target.value || '06:30' })} />
-          </label>
-          <label className="field">
-            Leitura da Bíblia
-            <input className="input" type="time" value={s.readTime} onChange={(e) => save({ readTime: e.target.value || '20:00' })} />
-          </label>
-        </div>
+        {(s.reminders || !isNative()) && (
+          <div className="stack" style={{ gap: 14 }}>
+            <SwitchRow title="Texto diário" on={s.remind.dt} onChange={(v) => save({ remind: { ...s.remind, dt: v } })} />
+            {s.remind.dt && (
+              <label className="field">
+                Horário do texto diário
+                <input className="input" type="time" value={s.dtTime} onChange={(e) => save({ dtTime: e.target.value || '06:30' })} />
+              </label>
+            )}
+            <SwitchRow title="Leitura da Bíblia" on={s.remind.read} onChange={(v) => save({ remind: { ...s.remind, read: v } })} />
+            {s.remind.read && (
+              <label className="field">
+                Horário da leitura
+                <input className="input" type="time" value={s.readTime} onChange={(e) => save({ readTime: e.target.value || '20:00' })} />
+              </label>
+            )}
+            <SwitchRow
+              title="Estudo pessoal"
+              hint={s.studyDays.length ? `${listDays(s.studyDays)}, às ${fmtTime(s.studyTime)}. Mude na aba Estudo.` : 'Escolha os dias na aba Estudo.'}
+              on={s.remind.study}
+              onChange={(v) => save({ remind: { ...s.remind, study: v } })}
+            />
+            <SwitchRow
+              title="Adoração em família"
+              hint={s.familyDay !== null ? `${cap(DIAS[s.familyDay])}, às ${fmtTime(s.familyTime)}. Mude na aba Estudo.` : 'Escolha o dia na aba Estudo.'}
+              on={s.remind.family}
+              onChange={(v) => save({ remind: { ...s.remind, family: v } })}
+            />
+            <SwitchRow title="Preparar a reunião de meio de semana" on={s.remind.mid} onChange={(v) => save({ remind: { ...s.remind, mid: v } })} />
+            {s.remind.mid && (
+              <>
+                <Chips label="Quando lembrar da reunião de meio de semana" options={prepOptions(s.midDay)} value={s.midPrep.before} onChange={(v) => save({ midPrep: { ...s.midPrep, before: v } })} />
+                <label className="field">
+                  Horário (meio de semana)
+                  <input className="input" type="time" value={s.midPrep.time} onChange={(e) => save({ midPrep: { ...s.midPrep, time: e.target.value || '19:00' } })} />
+                </label>
+              </>
+            )}
+            <SwitchRow title="Preparar a reunião de fim de semana" on={s.remind.wk} onChange={(v) => save({ remind: { ...s.remind, wk: v } })} />
+            {s.remind.wk && (
+              <>
+                <Chips label="Quando lembrar da reunião de fim de semana" options={prepOptions(s.wkDay)} value={s.wkPrep.before} onChange={(v) => save({ wkPrep: { ...s.wkPrep, before: v } })} />
+                <label className="field">
+                  Horário (fim de semana)
+                  <input className="input" type="time" value={s.wkPrep.time} onChange={(e) => save({ wkPrep: { ...s.wkPrep, time: e.target.value || '19:00' } })} />
+                </label>
+              </>
+            )}
+          </div>
+        )}
       </section>
 
       <SyncCard nav={nav} />

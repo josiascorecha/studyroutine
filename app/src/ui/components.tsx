@@ -74,6 +74,28 @@ export function Chips<T extends string | number>({ options, value, onChange, lab
   );
 }
 
+/** Vários valores marcados ao mesmo tempo (ex.: dias da semana). */
+export function MultiChips<T extends string | number>({ options, values, onChange, label }: { options: { v: T; label: string }[]; values: T[]; onChange: (v: T[]) => void; label: string }) {
+  return (
+    <div className="chips" role="group" aria-label={label}>
+      {options.map((o) => {
+        const on = values.includes(o.v);
+        return (
+          <button
+            key={String(o.v)}
+            type="button"
+            className="chip"
+            aria-pressed={on}
+            onClick={() => onChange(on ? values.filter((x) => x !== o.v) : [...values, o.v])}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Segment<T extends string>({ options, value, onChange, label }: { options: { v: T; label: string }[]; value: T; onChange: (v: T) => void; label: string }) {
   return (
     <div className="segment" role="group" aria-label={label}>

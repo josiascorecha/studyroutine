@@ -213,9 +213,22 @@ export function Today({ view, nav }: { view: DayView; nav: Nav }) {
         );
       })()}
 
+      {s.studyDays.includes(weekday(cur)) && (
+        <section className="card" aria-label="Estudo pessoal">
+          <div className="kicker">Hoje · {fmtTime(s.studyTime)}</div>
+          <div className="card-title">Estudo pessoal</div>
+          <div className="muted">Sugestões e seus links salvos estão na aba Estudo.</div>
+          <div className="row-btns">
+            <button type="button" className="btn" onClick={() => nav.go('estudo')}>
+              Abrir Estudo
+            </button>
+          </div>
+        </section>
+      )}
+
       {s.familyDay !== null && weekday(cur) === s.familyDay && (
         <section className="card" aria-label="Adoração em família">
-          <div className="kicker">Hoje</div>
+          <div className="kicker">Hoje · {fmtTime(s.familyTime)}</div>
           <div className="card-title">Adoração em família</div>
           {familyLog(svc.repo).some((x) => x.data.date === cur) ? (
             <div className="muted">Registrada hoje.</div>
