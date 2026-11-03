@@ -55,12 +55,16 @@ export class SegmentPlayer {
     await this.load(0);
   }
 
-  private async load(i: number) {
+  private async load(i: number, at?: number, autoplay = true) {
     const s = this.segs[i];
     if (!s) return this.finish();
     this.idx = i;
     if (this.audio.src !== s.url) this.audio.src = s.url;
-    this.audio.currentTime = s.start;
+    this.audio.currentTime = at ?? s.start;
+    if (!autoplay) {
+      this.emit({ segment: i, fileTime: this.audio.currentTime, pos: this.elapsedBefore(i) + (this.audio.currentTime - s.start) });
+      return;
+    }
     try {
       await this.audio.play();
       this.emit({ playing: true, segment: i, error: null });
@@ -105,10 +109,39 @@ export class SegmentPlayer {
     }
   }
 
+  /**
+   * Avança (positivo) ou volta (negativo) dentro da porção do dia, passando de um capítulo para o
+   * outro quando precisa. Nunca sai da porção: volta no máximo ao início e avança no máximo ao fim.
+   */
+  skip(seconds: number) {
+    if (!this.state || !this.segs.length) return;
+    const total = this.state.total;
+    const target = Math.min(total, Math.max(0, this.state.pos + seconds));
+    if (target >= total - 0.05) return this.finish();
+    let i = 0;
+    let rest = target;
+    while (i < this.segs.length - 1 && rest >= this.segs[i].end - this.segs[i].start) {
+      rest -= this.segs[i].end - this.segs[i].start;
+      i++;
+    }
+    const at = this.segs[i].start + rest;
+    const wasPlaying = !this.audio.paused;
+    if (this.state.done) this.emit({ done: false });
+    if (i === this.idx && this.audio.src === this.segs[i].url) {
+      this.audio.currentTime = at;
+      this.emit({ pos: target, fileTime: at });
+    } else {
+      this.emit({ pos: target, fileTime: at, segment: i });
+      void this.load(i, at, wasPlaying);
+    }
+  }
+
   back(seconds = 10) {
-    const s = this.segs[this.idx];
-    if (!s) return;
-    this.audio.currentTime = Math.max(s.start, this.audio.currentTime - seconds);
+    this.skip(-seconds);
+  }
+
+  forward(seconds = 30) {
+    this.skip(seconds);
   }
 
   stop() {

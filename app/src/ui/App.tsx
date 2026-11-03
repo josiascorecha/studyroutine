@@ -227,11 +227,19 @@ function PlayerBar({ view, onMark }: { view: DayView; onMark: () => void }) {
             {fmtClock(st.pos)} / {fmtClock(st.total)}
           </span>
         </div>
+        <button type="button" className="btn ghost" aria-label="Fechar o áudio" onClick={() => player.stop()}>
+          Fechar
+        </button>
+      </div>
+      <div className="player-skip" role="group" aria-label="Avançar ou voltar">
         <button type="button" className="btn ghost" aria-label="Voltar 10 segundos" onClick={() => player.back(10)}>
           −10 s
         </button>
-        <button type="button" className="btn ghost" aria-label="Fechar o áudio" onClick={() => player.stop()}>
-          Fechar
+        <button type="button" className="btn ghost" aria-label="Avançar 10 segundos" onClick={() => player.forward(10)}>
+          +10 s
+        </button>
+        <button type="button" className="btn ghost" aria-label="Avançar 30 segundos" onClick={() => player.forward(30)}>
+          +30 s
         </button>
       </div>
       <Progress value={st.total ? (st.pos * 100) / st.total : 0} />

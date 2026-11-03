@@ -165,6 +165,11 @@ test('configuração inicial, leitura até a reunião, preparo e ministério', a
   await leitura.getByRole('button', { name: 'Ouvir' }).click();
   const player = page.getByLabel('Reprodutor de áudio');
   await expect(player.getByText('Leitura de hoje · Jeremias 40:1–7')).toBeVisible();
+  const skip = player.getByRole('group', { name: 'Avançar ou voltar' });
+  await expect(skip.getByRole('button', { name: 'Voltar 10 segundos' })).toBeVisible();
+  await expect(skip.getByRole('button', { name: 'Avançar 10 segundos' })).toBeVisible();
+  await skip.getByRole('button', { name: 'Avançar 30 segundos' }).click();
+  await expect(player.getByText(/0:3\d \//)).toBeVisible();
   await player.getByRole('button', { name: 'Fechar o áudio' }).click();
 
   // Dois dias depois, sem ler no sábado: o app redistribui o restante.

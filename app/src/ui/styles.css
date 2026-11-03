@@ -791,6 +791,15 @@ textarea.input {
   display: none;
 }
 
+.player-skip {
+  display: flex;
+  gap: 8px;
+}
+
+.player-skip .btn {
+  flex: 1;
+}
+
 .dt-voice {
   align-items: center;
 }
